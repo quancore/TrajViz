@@ -1,0 +1,5 @@
+1)install npm and bower
+2)instal bower packages (bower_components):bower install
+3)install npm packages using "npm install"
+4)right click to gulpfile.js and click "show gulp task"
+5)enable start bowser and watch in gulp
