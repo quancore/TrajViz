@@ -16,7 +16,7 @@ var barGraphJSFiles     = ['js/bargraph/*.js'];
 gulp.task('default', function ()
 {
     return gulp.src(javaScriptFiles)
-        .pipe(concat('js/d3jsTutorial.js'))
+        .pipe(concat('js/project.js'))
         .pipe(gulp.dest('./'));
 });
 
