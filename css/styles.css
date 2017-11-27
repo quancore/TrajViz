@@ -63,3 +63,48 @@ z-index: 2;
     stroke-width: 2px;
     pointer-events: none;
 }
+
+.data1 {
+    stroke: steelblue;
+}
+
+.data2 {
+    stroke: orange;
+}
+
+.axis {
+    shape-rendering: crispEdges;
+}
+
+.x.axis line {
+    stroke: lightgrey;
+}
+
+.x.axis .minor {
+    stroke-opacity: .5;
+}
+
+.x.axis path {
+    display: none;
+}
+
+.x.axis text {
+    font-size: 14;
+}
+
+.y.axis line, .y.axis path {
+    fill: none;
+    stroke: #000;
+}
+
+.y.axis text {
+    font-size: 14;
+}
+
+.y.axisRight text {
+    fill: orange;
+}
+
+.y.axisLeft text {
+    fill: steelblue;
+}
