@@ -1,7 +1,7 @@
 
 var canvas;
 var w = 1200, h = 600;
-var g_w=400,g_h=200;
+var g_w=600,g_h=400;
 var big_hexagon_margin=40;
 var lineGenerator = d3.line();
 var h_w = 200, h_h = 200, s_radius=20, big_radius;
@@ -15,6 +15,8 @@ var  l_center_poly_x=120,
     r_center_poly_y = 100;
 var InTransition=false;
 
+var graph_axis_distance=15;
+
 var data1 = [3, 6, 2, 7, 5, 2, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
 var data2 = [543, 367, 215, 56, 65, 62, 87, 156, 287, 398, 523, 685, 652, 674, 639, 619, 589, 558, 605, 574, 564, 496, 525, 476, 432, 458, 421, 387, 375, 368];
 
@@ -23,7 +25,7 @@ var drawHexagon = d3.line()
     .y(function(d) { return d.y; })
     .curve(d3.curveCardinalClosed.tension("1"));
 
-var m = [80, 80, 80, 80]; // margins
+var graph_margin = [80, 80, 80, 80]; // margins
 
 function calculate_big_hexagon_x(){
     var total_width_for_hexagons=w-4*big_hexagon_margin;
@@ -50,74 +52,80 @@ function init() {
 
 
 }
-function first_draw_graph(data1,data2) {
-    var w = g_w - m[1] - m[3];	// width
-    var h = g_h - m[0] - m[2]; // height
-    var max1=Math.max.apply(Math, data1);
-    var max2=Math.max.apply(Math, data2);
+function remove_line(element_index) {
+    d3.selectAll('path[element_index="' + (element_index) + '"]').remove();
 
-    var x = d3.scaleLinear().domain([0, max1]).range([0, w]);
+}
+
+function handle_graph(element_index)
+{
+    var w = g_w - graph_margin[1] - graph_margin[3];	// width
+    var h = g_h - graph_margin[0] - graph_margin[2]; // height
+    var transition_y;
+
+    var graph=d3.selectAll(".graph");
+    var line_number=1;
+    var has_x_axis_exist=false;
+
+
+    if(graph.empty()==true){
+        graph = canvas.append("svg")
+            .attr("width", w + graph_margin[1] + graph_margin[3])
+            .attr("height", h + graph_margin[0] + graph_margin[2])
+            .attr("line_number",1)
+            .attr("class","graph")
+            .append("g")
+            .attr("transform", "translate(" + graph_margin[3] + "," + graph_margin[0] + ")");
+        transition_y=-graph_axis_distance;
+    }
+    else {
+        line_number=graph.attr("line_number");
+        transition_y = w + graph_axis_distance * line_number;
+        has_x_axis_exist=true;
+
+    }
+
+    //handle data here
+    var x_domain={"lower_b":0,"upper_b":data1.length},
+        x_range={"lower_b":0,"upper_b":w},
+        y_domain={"lower_b":0,"upper_b":Math.max.apply(Math, data1)},
+        y_range={"lower_b":h,"upper_b":0};
+
+    var x = d3.scaleLinear().domain([x_domain.lower_b, x_domain.upper_b]).range([x_range.lower_b, x_range.upper_b]);
     // Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
-    var y1 = d3.scaleLinear().domain([0, max2]).range([h, 0]); // in real world the domain would be dynamically calculated from the data
-    //var y2 = d3.scale.linear().domain([0, 700]).range([h, 0]);  // in real world the domain would be dynamically calculated from the data
-    // automatically determining max range can work something like this
-    // var y = d3.scale.linear().domain([0, d3.max(data)]).range([h, 0]);
+    var y = d3.scaleLinear().domain([y_domain.lower_b, y_domain.upper_b]).range([y_range.lower_b, y_range.upper_b]);
 
-    // create a line function that can convert data[] into x and y points
     var line1 = d3.line()
-    // assign the X function to plot our line as we wish
         .x(function(d,i) {
-            // verbose logging to show what's actually being done
-            console.log('Plotting X1 value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
-            // return the X coordinate where we want to plot this datapoint
+
             return x(i);
         })
         .y(function(d) {
-            // verbose logging to show what's actually being done
-            console.log('Plotting Y1 value for data point: ' + d + ' to be at: ' + y1(d) + " using our y1Scale.");
-            // return the Y coordinate where we want to plot this datapoint
-            return y1(d);
+
+            return y(d);
         });
 
-    // create a line function that can convert data[] into x and y points
-   /* var line2 = d3.line()
-    // assign the X function to plot our line as we wish
-        .x(function(d,i) {
-            // verbose logging to show what's actually being done
-            console.log('Plotting X2 value for data point: ' + d + ' using index: ' + i + ' to be at: ' + x(i) + ' using our xScale.');
-            // return the X coordinate where we want to plot this datapoint
-            return x(i);
-        })
-        .y(function(d) {
-            // verbose logging to show what's actually being done
-            console.log('Plotting Y2 value for data point: ' + d + ' to be at: ' + y2(d) + " using our y2Scale.");
-            // return the Y coordinate where we want to plot this datapoint
-            return y2(d);
-        });*/
 
+    draw_graph(graph,line_number ,data1,x,y, line1,has_x_axis_exist,transition_y,element_index);
+}
 
-    // Add an SVG element with the desired dimensions and margin.
-    var graph = canvas.append("svg:svg")
-        .attr("width", w + m[1] + m[3])
-        .attr("height", h + m[0] + m[2])
-        .append("svg:g")
-        .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_x_axis_exist,transition_of_y,element_index) {
 
-    // create yAxis
-    var xAxis = d3.axisBottom().scale(x).tickSize(-h);
-    // Add the x-axis.
-    graph.append("svg:g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + h + ")")
-        .call(xAxis);
-
+    if(!has_x_axis_exist) {
+        var xAxis = d3.axisBottom().scale(x_scalar).tickSize(-h);
+        // Add the x-axis.
+        graph.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + h + ")")
+            .call(xAxis);
+    }
 
     // create left yAxis
-    var yAxisLeft = d3.axisLeft().scale(y1).ticks(4);
+    var yAxisLeft = d3.axisLeft().scale(y_scalar).ticks(4);
     // Add the y-axis to the left
-    graph.append("svg:g")
+    graph.append("g")
         .attr("class", "y axis axisLeft")
-        .attr("transform", "translate(-15,0)")
+        .attr("transform", "translate("+transition_of_y+",0)")
         .call(yAxisLeft);
 
     // create right yAxis
@@ -130,7 +138,8 @@ function first_draw_graph(data1,data2) {
 
     // add lines
     // do this AFTER the axes above so that the line is above the tick-lines
-    graph.append("svg:path").attr("d", line1(data1)).attr("class", "data1");
+    graph.append("path").attr("d", line_creator(data)).attr("class", "data"+line_number).attr("element_index",element_index);
+    graph.attr("line_number",line_number);
     //graph.append("svg:path").attr("d", line2(data2)).attr("class", "data2");
 
 
@@ -295,17 +304,23 @@ function zoom() {
 
 
 function mouseClick(d) {
+    var obj = d3.select(this);
+    var element_index=obj.attr("floor")*6+obj.attr("index");
+
     if (!InTransition) {
-        console.log("click");
-        var obj = d3.select(this);
         if (!obj.classed("clicked")) {
             obj.classed("clicked", true);
             obj.transition().attr("fill", "red");
             obj.call(d3.zoom().on("zoom", zoom));
+
+            handle_graph(element_index);
+
         } else {
             obj.classed("clicked", false);
             obj.transition().attr("fill", "blue");
             obj.on('.zoom', null);
+
+            remove_line(element_index);
         }
 
     }
@@ -341,20 +356,18 @@ function mouseover(d,i) {
 
 
         obj.classed("selected", true);
-        first_draw_graph(data1,data2);
 
         //var circle = d3.select(this.parentNode).select('circle');
 
         //transition(circle,obj,startPoint);
 
 
-        obj
-            .attr("fill", "rgba(255,0,0,0.4)")
+        obj.attr("fill", "rgba(255,0,0,0.4)")
 
     }
 }
 function transition(trans_obj,path,startpoint) {
-    console.log("kkkk");
+
    if(d3.selectAll(".selected").empty()==true)
         return;
 
@@ -379,7 +392,7 @@ function translateAlong(path,startpoint) {
             console.log(p.x+" "+p.y);
             var centerx=p.x;
             var centery=p.y;
-            return "translate(" + centerx + "," + centery + ")";//Move marker
+            return "translate(" + centerx+offset_x + "," + centery+offset_x + ")";//Move marker
         }
     }
 
