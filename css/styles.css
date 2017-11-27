@@ -24,3 +24,87 @@ svg {
     top: 10px;
     left: 0;
 }
+.big_hexagon{
+    position: relative;
+    z-index: 1;
+}
+.small_hexagon{
+    position: relative;
+z-index: 2;
+
+}.hexagon {
+     fill: white;
+     pointer-events: all;
+ }
+
+.hexagon path {
+    -webkit-transition: fill 250ms linear;
+    transition: fill 250ms linear;
+}
+
+.hexagon :hover {
+    fill: pink;
+}
+
+.hexagon .fill {
+    fill: red;
+}
+
+.mesh {
+    fill: none;
+    stroke: #000;
+    stroke-opacity: .2;
+    pointer-events: none;
+}
+
+.border {
+    fill: none;
+    stroke: #000;
+    stroke-width: 2px;
+    pointer-events: none;
+}
+
+.data1 {
+    stroke: steelblue;
+}
+
+.data2 {
+    stroke: orange;
+}
+
+.axis {
+    shape-rendering: crispEdges;
+}
+
+.x.axis line {
+    stroke: lightgrey;
+}
+
+.x.axis .minor {
+    stroke-opacity: .5;
+}
+
+.x.axis path {
+    display: none;
+}
+
+.x.axis text {
+    font-size: 14;
+}
+
+.y.axis line, .y.axis path {
+    fill: none;
+    stroke: #000;
+}
+
+.y.axis text {
+    font-size: 14;
+}
+
+.y.axisRight text {
+    fill: orange;
+}
+
+.y.axisLeft text {
+    fill: steelblue;
+}
