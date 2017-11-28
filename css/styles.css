@@ -65,11 +65,18 @@ z-index: 2;
 }
 
 .data1 {
-    stroke: steelblue;
+    fill: none;
+    stroke-width: 1;
+    stroke: red;
 }
 
 .data2 {
+    fill: none;
     stroke: orange;
+}
+.data3 {
+    fill: none;
+    stroke: blue;
 }
 
 .axis {
@@ -91,20 +98,18 @@ z-index: 2;
 .x.axis text {
     font-size: 14;
 }
-
-.y.axis line, .y.axis path {
+.y.axis1 line, .y.axis1 path, .y.axis1 text{
     fill: none;
-    stroke: #000;
+    stroke: red;
 }
-
+.y.axis2 line, .y.axis2 path, .y.axis2 text{
+    fill: none;
+    stroke: orange;
+}
+.y.axis3 line, .y.axis3 path, .y.axis3 text{
+    fill: none;
+    stroke: blue;
+}
 .y.axis text {
     font-size: 14;
-}
-
-.y.axisRight text {
-    fill: orange;
-}
-
-.y.axisLeft text {
-    fill: steelblue;
 }
