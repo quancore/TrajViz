@@ -1,8 +1,10 @@
 
 var canvas;
-var w = 1200, h = 600;
-var g_w=600,g_h=400;
+var w = 1200, h = 800;
+var g_w=600,g_h=300;
+var g_x=300,g_y=550;
 var big_hexagon_margin=40;
+var line_margin_down=300;
 var lineGenerator = d3.line();
 var h_w = 200, h_h = 200, s_radius=20, big_radius;
 var element_number=15;
@@ -15,7 +17,7 @@ var  l_center_poly_x=120,
     r_center_poly_y = 100;
 var InTransition=false;
 
-var graph_axis_distance=15;
+var graph_axis_distance=30;
 
 var data1 = [3, 6, 2, 7, 5, 2, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
 var data2 = [543, 367, 215, 56, 65, 62, 87, 156, 287, 398, 523, 685, 652, 674, 639, 619, 589, 558, 605, 574, 564, 496, 525, 476, 432, 458, 421, 387, 375, 368];
@@ -64,7 +66,7 @@ function handle_graph(element_index)
     var transition_y;
 
     var graph=d3.selectAll(".graph");
-    var line_number=1;
+    var line_number=0;
     var has_x_axis_exist=false;
 
 
@@ -74,12 +76,15 @@ function handle_graph(element_index)
             .attr("height", h + graph_margin[0] + graph_margin[2])
             .attr("line_number",1)
             .attr("class","graph")
-            .append("g")
-            .attr("transform", "translate(" + graph_margin[3] + "," + graph_margin[0] + ")");
+            .attr("transform", "translate(" + g_x + "," + g_y + ")");
+
+        graph.append("g")
+            .attr("transform", "translate(" + graph_margin[3] + "," + graph_margin[0] + ")")
+            .attr("class","graph_area");
         transition_y=-graph_axis_distance;
     }
     else {
-        line_number=graph.attr("line_number");
+        line_number=parseInt(graph.attr("line_number"));
         transition_y = w + graph_axis_distance * line_number;
         has_x_axis_exist=true;
 
@@ -105,28 +110,37 @@ function handle_graph(element_index)
             return y(d);
         });
 
-
-    draw_graph(graph,line_number ,data1,x,y, line1,has_x_axis_exist,transition_y,element_index);
+    if(line_number<3)
+    draw_graph(graph,(line_number+1) ,data1,x,y, line1,has_x_axis_exist,h,transition_y,element_index);
 }
 
-function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_x_axis_exist,transition_of_y,element_index) {
+function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_x_axis_exist,transition_of_x,transition_of_y,element_index) {
+
+    var yAxisLeft = d3.axisLeft().scale(y_scalar).ticks(4);
+    var graph_area=graph.select(".graph_area");
 
     if(!has_x_axis_exist) {
         var xAxis = d3.axisBottom().scale(x_scalar).tickSize(-h);
         // Add the x-axis.
-        graph.append("g")
+        graph_area.append("g")
             .attr("class", "x axis")
-            .attr("transform", "translate(0," + h + ")")
+            .attr("transform", "translate(0," + transition_of_x + ")")
             .call(xAxis);
-    }
 
+        graph_area.append("g")
+            .attr("class", "y axis axis"+line_number)
+            .attr("transform", "translate("+transition_of_y+",0)")
+            .call(yAxisLeft);
+    }
+    else{
+        graph_area.append("g")
+            .attr("class", "y axis axis"+line_number)
+            .attr("transform", "translate("+transition_of_y+",0)")
+            .call(yAxisLeft);
+    }
     // create left yAxis
-    var yAxisLeft = d3.axisLeft().scale(y_scalar).ticks(4);
     // Add the y-axis to the left
-    graph.append("g")
-        .attr("class", "y axis axisLeft")
-        .attr("transform", "translate("+transition_of_y+",0)")
-        .call(yAxisLeft);
+
 
     // create right yAxis
     //var yAxisRight = d3.axisRight().scale(y2).ticks(6).orient("right");
@@ -138,7 +152,7 @@ function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_
 
     // add lines
     // do this AFTER the axes above so that the line is above the tick-lines
-    graph.append("path").attr("d", line_creator(data)).attr("class", "data"+line_number).attr("element_index",element_index);
+    graph_area.append("path").attr("d", line_creator(data)).attr("class", "data"+line_number).attr("element_index",element_index);
     graph.attr("line_number",line_number);
     //graph.append("svg:path").attr("d", line2(data2)).attr("class", "data2");
 
@@ -163,7 +177,7 @@ function polygons() {
 
 
 
-        var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-big_hexagon_margin]];
+        var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
 
 
 
