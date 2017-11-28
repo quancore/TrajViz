@@ -1,20 +1,26 @@
 
 var canvas;
-var w = 1200, h = 800;
-var g_w=600,g_h=300;
+var w = 1200, h = 550;
+var g_w=500,g_h=300;
 var g_x=300,g_y=550;
-var big_hexagon_margin=40;
 var line_margin_down=300;
 var lineGenerator = d3.line();
-var h_w = 200, h_h = 200, s_radius=20, big_radius;
-var element_number=15;
+var h_w = 200, h_h = 200, s_radius=40, big_radius=220;
+var element_number=12;
 var floor_number=Math.floor(element_number/6);
 var remaining=element_number%6;
 var padding=5;
+
 var  l_center_poly_x=120,
     l_center_poly_y = 100,
     r_center_poly_x=400 ,
     r_center_poly_y = 100;
+
+var big_hexagon_margin={"left":10,"right":10,"top":55,"bottom":80};
+var between_hexagons=600;
+
+var middle_polygon_margin=10;
+
 var InTransition=false;
 
 var graph_axis_distance=30;
@@ -30,15 +36,32 @@ var drawHexagon = d3.line()
 var graph_margin = [80, 80, 80, 80]; // margins
 
 function calculate_big_hexagon_x(){
-    var total_width_for_hexagons=w-4*big_hexagon_margin;
-    big_radius=total_width_for_hexagons/4;
-    l_center_poly_x=(big_radius+big_hexagon_margin)/2;
-    r_center_poly_x=3/2*(big_radius+big_hexagon_margin);
-    l_center_poly_y=(big_radius+big_hexagon_margin)/2;
-    r_center_poly_y=(big_radius+big_hexagon_margin)/2;
+    var available_area=w-big_hexagon_margin.left-big_hexagon_margin.right;
+    var total_width_for_hexagons=available_area-between_hexagons;
+
+    big_hexagon_margin.bottom=(h-(big_radius*2))/2
+    l_center_poly_x=(big_radius+big_hexagon_margin.left)/2;
+    r_center_poly_x=(w-(big_radius+big_hexagon_margin.right))/2;
+    l_center_poly_y=(big_radius+big_hexagon_margin.top)/2;
+    r_center_poly_y=(big_radius+big_hexagon_margin.top)/2;
     console.log("t: "+ total_width_for_hexagons+" big: "+big_radius);
 }
+function calculate_uppermiddle_polygons(){
+    var a=big_hexagon_margin.left+(3/2)*big_radius+middle_polygon_margin;
+    var b=big_hexagon_margin.left+2*big_radius+middle_polygon_margin;
 
+    return  upper_polygon_points=[
+
+        {"x":b/2, "y":(big_hexagon_margin.top+(big_radius/2)*(Math.sqrt(3)*2))},
+        {"x":w-b, "y":(big_hexagon_margin.top+big_radius/2*(Math.sqrt(3)*2))},
+        {"x":a, "y":big_hexagon_margin.top},
+        {"x":w-(a), "y":big_hexagon_margin.top},
+        {"x":a+((big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3)), "y":middle_polygon_margin},
+        {"x":w-(a+((big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3))), "y":middle_polygon_margin},
+
+
+    ];
+}
 function init() {
 
         calculate_big_hexagon_x();
@@ -162,19 +185,6 @@ function mousedown(d) {
     console.log("coordinates: "+d3.event.pageX+"  "+d3.event.pageY+"py");
 }
 function polygons() {
-        scaleX = d3.scaleLinear()
-        .domain([-30,30])
-        .range([0,600]);
-
-        scaleY = d3.scaleLinear()
-            .domain([0,50])
-            .range([500,0]);
-
-        poly = [{"x":0.0, "y":25.0},
-            {"x":8.5,"y":23.4},
-            {"x":13.0,"y":21.0},
-            {"x":19.0,"y":15.5}];
-
 
 
         var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
@@ -204,6 +214,15 @@ function polygons() {
         .attr("stroke-width", 3)
         .attr("fill", "rgba(255,0,0,0.4)")
         .classed("big_hexagon", true);
+
+    var right_hexagon = canvas.append("path")
+        .attr("d", drawHexagon(calculate_uppermiddle_polygons()))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("fill", "rgba(255,0,0,0.4)")
+        .classed("big_hexagon", true);
+
 
 
     var middle_line = canvas.append("path")
@@ -266,7 +285,7 @@ function handle_scroll_event(parent_obj,unit_coefficient) {
         elements=parent_obj.selectAll('path[floor="' + (floor_number + 1) + '"]').each(function (d, i) {
             InTransition=true;
 
-                var curr_obj = d3.select(this);
+            var curr_obj = d3.select(this);
             var index = curr_obj.attr("index");
             var new_center_offset = calculate_hexagon_center(index,floor_number+2, padding, s_radius);
             curr_obj.transition().on("end", function(){ console.log("all done") });
@@ -326,6 +345,7 @@ function mouseClick(d) {
             obj.classed("clicked", true);
             obj.transition().attr("fill", "red");
             obj.call(d3.zoom().on("zoom", zoom));
+            obj.on("dblclick.zoom", null);
 
             handle_graph(element_index);
 
@@ -513,5 +533,17 @@ function calculate_hexagon_center(neig_number,multiplier,padding,r){
     if(neig_number==5) {
         return {x: d_center_diff_x, y: -d_center_diff_y};
     }
+
+}
+function check_hexagon_approach(parent_x,parent_y,x,y){
+    if(center_type=="right"){
+        return  Math.sqrt( (x-r_center_poly_x)*(x-r_center_poly_x) + (y-r_center_poly_y)*(y-r_center_poly_y) )>Math.sqrt( (parent_x-r_center_poly_x)*(parent_x-r_center_poly_x) + (parent_y-r_center_poly_y)*(parent_y-r_center_poly_y) );
+    }
+    else if(center_type=="left"){
+        return  Math.sqrt( (x-l_center_poly_x)*(x-l_center_poly_x) + (y-l_center_poly_y)*(y-l_center_poly_y) )>Math.sqrt( (parent_x-l_center_poly_x)*(parent_x-l_center_poly_x) + (parent_y-l_center_poly_y)*(parent_y-l_center_poly_y) );
+    }
+
+}
+function recursive_hexagon_creation(container,container_name,radius,x,y,padding,element_number){
 
 }

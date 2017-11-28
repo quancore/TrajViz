@@ -21,7 +21,7 @@ svg {
 .svg-content-responsive {
     display: inline-block;
     position: absolute;
-    top: 10px;
+    top: 0px;
     left: 0;
 }
 .big_hexagon{
