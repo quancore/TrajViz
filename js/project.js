@@ -217,7 +217,17 @@ function polygons() {
 
 
 function remove_line(element_index) {//remove element from line graph
+    var graph=d3.selectAll(".graph");
+    var line_count=parseInt(graph.attr("line_number"));
+
     d3.selectAll('path[element_index="' + (element_index) + '"]').remove();
+    d3.selectAll('g[element_index="' + (element_index) + '"]').remove();
+    line_count--;
+    if(line_count<=0){
+        d3.selectAll(".graph_container").remove();
+    }
+    else
+        graph.attr("line_number",line_count);
 
 }
 
@@ -230,7 +240,7 @@ function handle_graph(element_index)
     var graph=d3.selectAll(".graph");
     var graph_container=d3.selectAll(".upper_container");
 
-    var line_number=0;
+    var line_number=0;//keep count of how many line appended currently
     var has_x_axis_exist=false;
 
 
@@ -276,7 +286,7 @@ function handle_graph(element_index)
             return y(d);
         });
 
-    if(line_number<3)
+    if(line_number<3)//at most 3 data append
         draw_graph(graph,(line_number+1) ,data1,x,y, line1,has_x_axis_exist,h,transition_y,element_index);
 }
 
@@ -296,12 +306,14 @@ function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_
         graph_area.append("g")
             .attr("class", "y axis axis"+line_number)
             .attr("transform", "translate("+transition_of_y+",0)")
+            .attr("element_index",element_index)
             .call(yAxisLeft);
     }
     else{
         graph_area.append("g")
             .attr("class", "y axis axis"+line_number)
             .attr("transform", "translate("+transition_of_y+",0)")
+            .attr("element_index",element_index)
             .call(yAxisLeft);
     }
     // create left yAxis
@@ -428,15 +440,21 @@ function handle_elements(elements){
 
 function zoom() {
     if(!InTransition) {
-        console.log("zoooooom");
 
         var parent_obj = d3.select(this.parentNode);
-        /*obj
-        .transition()
-        .attr("transform", "translate(320, 0)")
-        .style("fill", "black");*/
+        zoom_event_garbage_collector();
         handle_scroll_event_updated(parent_obj, -1);
     }
+}
+function zoom_event_garbage_collector(){//can be add any feature to remove on zoom event
+    d3.selectAll(".clicked").each(function (d, i) {
+        console.log("garbage");
+        var obj = d3.select(this);
+        obj.attr("fill","black");
+        var event = document.createEvent('SVGEvents');
+        event.initEvent("click",true,true);
+        this.dispatchEvent(event);
+    });
 }
 function mousedown(d) {
     console.log("coordinates: "+d3.event.pageX+"  "+d3.event.pageY+"py");
@@ -456,8 +474,9 @@ function mouseClick(d) {
             handle_graph(element_index);
 
         } else {
+            console.log("deselect");
             obj.classed("clicked", false);
-            obj.transition().attr("fill", "blue");
+            obj.transition().attr("fill", "black");
             obj.on('.zoom', null);
 
             remove_line(element_index);
@@ -509,11 +528,9 @@ function mouseover(d,i) {
 function mouseout() {
     if (!InTransition) {
 
-        console.log("out");
         canvas.selectAll(".small_selection_ball").remove();
-        d3.selectAll(".selected").classed("selected", false);
-        d3.select(this)
-            .attr("fill", "green")
+        if(!d3.select(this).classed("clicked"))
+            d3.select(this).attr("fill", "black");
 
     }
 }
