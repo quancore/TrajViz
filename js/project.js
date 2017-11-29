@@ -215,7 +215,6 @@ function polygons() {
 
 }
 
-
 function remove_line(element_index) {//remove element from line graph
     var graph=d3.selectAll(".graph");
     var line_count=parseInt(graph.attr("line_number"));
@@ -439,8 +438,10 @@ function handle_elements(elements){
 }
 
 function zoom() {
-    if(!InTransition) {
+    var direction = d3.event.sourceEvent.deltaY > 0 ? 'down' : 'up'; ;
 
+    console.log(direction);
+     if(!InTransition) {
         var parent_obj = d3.select(this.parentNode);
         zoom_event_garbage_collector();
         handle_scroll_event_updated(parent_obj, -1);
@@ -468,8 +469,10 @@ function mouseClick(d) {
         if (!obj.classed("clicked")) {
             obj.classed("clicked", true);
             obj.transition().attr("fill", "red");
-            obj.call(d3.zoom().on("zoom", zoom));
+            obj.call(d3.zoom()
+                .on("zoom", zoom));
             obj.on("dblclick.zoom", null);
+
 
             handle_graph(element_index);
 
@@ -497,8 +500,18 @@ function mouseover(d,i) {
         var obj_c_x = obj.attr("cx");
         var obj_c_y = obj.attr("cy");
 
-        console.log("point" + obj_c_x + " " + obj_c_y);
+        //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
+        //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
+
+        d3.select("#tooltip")
+            .style("left", obj_c_x*2 + "px")
+            .style("top", obj_c_y *2+ "px")
+            .select("#value")
+            .text(10);
+
+
+        d3.select("#tooltip").classed("hidden", false);
 
         var startPoint = pathStartPoint(obj.node());
 
@@ -531,6 +544,7 @@ function mouseout() {
         canvas.selectAll(".small_selection_ball").remove();
         if(!d3.select(this).classed("clicked"))
             d3.select(this).attr("fill", "black");
+        d3.select("#tooltip").classed("hidden", true);
 
     }
 }
@@ -684,7 +698,7 @@ function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,f
                 var radians = (Math.PI / 180) * angle_c;
 
                 var d_center_diff_x = x + Math.cos(radians) * radius_arr[l];
-                var d_center_diff_y = y +Math.sin(radians) * radius_arr[l];
+                var d_center_diff_y = y + Math.sin(radians) * radius_arr[l];
                 //var center_diff = rotate(x, y, d_center_diff_x, d_center_diff_y, (angle * k));
                 var small_hexagon = container.append("path")
                     .attr("d", drawPolygon(calculate_hexagon(d_center_diff_x, d_center_diff_y, radius)))
@@ -701,6 +715,7 @@ function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,f
                     .on("mouseup", mouseup)
                     .on("mouseover", mouseover)
                     .on("mouseout", mouseout);
+
 
             }
 
