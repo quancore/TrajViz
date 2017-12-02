@@ -1,47 +1,105 @@
 
-var canvas;
-var w = 1200, h = 800;
-var g_w=600,g_h=300;
-var g_x=300,g_y=550;
-var big_hexagon_margin=40;
-var line_margin_down=300;
-var lineGenerator = d3.line();
-var h_w = 200, h_h = 200, s_radius=20, big_radius;
-var element_number=15;
-var floor_number=Math.floor(element_number/6);
-var remaining=element_number%6;
-var padding=5;
-var  l_center_poly_x=120,
+var canvas;//most outer container
+
+var w = 1200, h = 550;//most outer container size
+
+var g_w=420,g_h=250;//line graph w and h
+var g_x=(w/2)-g_w/2,g_y=0;//line graph position
+var graph_axis_distance=30;//distance between two consecutive y-axis
+var graph_margin = [60, 80, 60, 80]; // margins
+
+
+var s_radius=40, big_radius=220;//s_radius=radius of small hexagons, big_raidus=radius of big hexagons
+var  l_center_poly_x=120,//initial polygon centers
     l_center_poly_y = 100,
     r_center_poly_x=400 ,
     r_center_poly_y = 100;
-var InTransition=false;
+var floor_number=2;//number of floor created with hexagons (count of hexagon level)
+var padding=5;//padding between big container polygons
+var middle_polygon_margin=10;//top and bottom padding of middle polygon containers
+var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagons margin array
+var between_hexagons=600;//distance between two big hexagons
 
-var graph_axis_distance=30;
+/* For star shape creation
+var element_number=12;
+var floor_number=Math.floor(element_number/6);
+var remaining=element_number%6;*/
+
+
+var InTransition=false;//transition parameter.use for disable mouse event during zoom event
+
+
+
 
 var data1 = [3, 6, 2, 7, 5, 2, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
 var data2 = [543, 367, 215, 56, 65, 62, 87, 156, 287, 398, 523, 685, 652, 674, 639, 619, 589, 558, 605, 574, 564, 496, 525, 476, 432, 458, 421, 387, 375, 368];
 
-var drawHexagon = d3.line()
+var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
     .x(function(d) { return d.x; })
     .y(function(d) { return d.y; })
     .curve(d3.curveCardinalClosed.tension("1"));
 
-var graph_margin = [80, 80, 80, 80]; // margins
 
-function calculate_big_hexagon_x(){
-    var total_width_for_hexagons=w-4*big_hexagon_margin;
-    big_radius=total_width_for_hexagons/4;
-    l_center_poly_x=(big_radius+big_hexagon_margin)/2;
-    r_center_poly_x=3/2*(big_radius+big_hexagon_margin);
-    l_center_poly_y=(big_radius+big_hexagon_margin)/2;
-    r_center_poly_y=(big_radius+big_hexagon_margin)/2;
-    console.log("t: "+ total_width_for_hexagons+" big: "+big_radius);
+function calculate_hexagon(xp,yp,radius) {//small hexagon drawer
+    var h = (Math.sqrt(3)/2);
+
+    return hexagonData = [
+        { "x": radius+xp,   "y": yp},
+        { "x": radius/2+xp,  "y": radius*h+yp},
+        { "x": -radius/2+xp,  "y": radius*h+yp},
+        { "x": -radius+xp,  "y": yp},
+        { "x": -radius/2+xp,  "y": -radius*h+yp},
+        { "x": radius/2+xp, "y": -radius*h+yp}];
 }
 
+function calculate_big_hexagon_centers(){
+    var available_area=w-big_hexagon_margin.left-big_hexagon_margin.right;
+    var total_width_for_hexagons=available_area-between_hexagons;
+
+    big_hexagon_margin.top=(h/2-(big_radius*Math.sqrt(3)/2));
+    big_hexagon_margin.bottom=big_hexagon_margin.top;
+    l_center_poly_x=(big_radius+big_hexagon_margin.left)/2;
+    r_center_poly_x=(w-(big_radius+big_hexagon_margin.right))/2;
+    l_center_poly_y=(big_radius*Math.sqrt(3)/2+big_hexagon_margin.top)/2;
+    r_center_poly_y=(big_radius*Math.sqrt(3)/2+big_hexagon_margin.top)/2;
+    console.log("t: "+ total_width_for_hexagons+" big: "+big_hexagon_margin.top);
+}
+function calculate_uppermiddle_polygons(){
+    var a=big_hexagon_margin.left+(3/2)*big_radius+middle_polygon_margin;
+    var b=big_hexagon_margin.left+2*big_radius+middle_polygon_margin;
+    var c=a+(big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3);
+
+    return  upper_polygon_points=[
+
+        {"x":a, "y":big_hexagon_margin.top},
+        {"x":b, "y":big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2)},
+        {"x":w-(b), "y":big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2)},
+        {"x":w-a, "y":big_hexagon_margin.top},
+        {"x":w-c, "y":middle_polygon_margin},
+        {"x":c, "y":middle_polygon_margin},
+
+
+    ];
+}
+
+function calculate_lowermiddle_polygons(){
+
+    var a=big_hexagon_margin.left+(3/2)*big_radius+middle_polygon_margin;
+    var b=big_hexagon_margin.left+2*big_radius+middle_polygon_margin;
+    var c=a+(big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3);
+
+    return  upper_polygon_points=[
+
+        {"x":a, "y":h-big_hexagon_margin.top},
+        {"x":b, "y":h-(big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2))},
+        {"x":w-(b), "y":h-(big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2))},
+        {"x":w-a, "y":h-big_hexagon_margin.top},
+        {"x":w-c, "y":h-middle_polygon_margin},
+        {"x":c, "y":h-middle_polygon_margin}];
+}
 function init() {
 
-        calculate_big_hexagon_x();
+        calculate_big_hexagon_centers();
         canvas = d3.select(".svg-container")
         .append("svg")
         .attr("preserveAspectRatio", "xMinYMin meet")
@@ -49,13 +107,126 @@ function init() {
         //class to make it responsive
         .classed("svg-content-responsive", true);
 
-    canvas.on('mousedown', mousedown);
+        canvas.on('mousedown', mousedown);
+        polygons();
 
 
 
 }
-function remove_line(element_index) {
+
+function polygons() {
+
+
+        //var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
+
+
+
+    var left_container = canvas.append("g")
+        .attr("transform", "translate(" + l_center_poly_x + "," +l_center_poly_y + ")");
+
+
+    var right_container = canvas.append("g")
+        .attr("transform", "translate(" + r_center_poly_x + "," +r_center_poly_y + ")");
+
+    var upper_container = canvas.append("g")
+        .attr("class","upper_container");
+
+    var lower_container = canvas.append("g")
+        .attr("class","upper_container");
+
+
+
+    var left_hexagon = left_container.append("path")
+            .attr("d", drawPolygon(calculate_hexagon(l_center_poly_x,l_center_poly_y,big_radius)))
+            .attr("stroke", "red")
+            .attr("stroke-dasharray","20,5")
+            .attr("stroke-width", 3)
+            .attr("fill", "rgba(255,0,0,0.4)")
+            .classed("big_hexagon", true);
+
+    var right_hexagon = right_container.append("path")
+        .attr("d", drawPolygon(calculate_hexagon(r_center_poly_x,r_center_poly_y,big_radius)))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("fill", "rgba(255,0,0,0.4)")
+        .classed("big_hexagon", true);
+
+     upper_middle_hexagon = upper_container.append("path")
+        .attr("d", drawPolygon(calculate_uppermiddle_polygons()))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("fill", "rgba(255,0,0,0.4)")
+        .classed("upper_middle_hexagon", true);
+
+     lower_middle_hexagon = lower_container.append("path")
+        .attr("d", drawPolygon(calculate_lowermiddle_polygons()))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("fill", "rgba(255,0,0,0.4)")
+        .classed("lower_middle_hexagon", true);
+
+
+
+    /*var middle_line = canvas.append("path")
+        .attr("d", lineGenerator(line_point))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5");*/
+
+    var r_small_center_hexagon=right_container.append("path")
+        .attr("d", drawPolygon(calculate_hexagon(r_center_poly_x,r_center_poly_y,s_radius)))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("cx",r_center_poly_x)
+        .attr("cy",r_center_poly_y)
+        .on("mousedown", mousedown)
+        .on("click", mouseClick)
+        .on("mouseup", mouseup)
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout)
+        .classed("center_hexagon", true);
+
+
+
+    var l_small_center_hexagon=left_container.append("path")
+        .attr("d", drawPolygon(calculate_hexagon(l_center_poly_x,l_center_poly_y,s_radius)))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("cx",l_center_poly_x)
+        .attr("cy",l_center_poly_y)
+        .on("mousedown", mousedown)
+        .on("click", mouseClick)
+        .on("mouseup", mouseup)
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout)
+        .classed("center_hexagon", true);
+
+
+
+    hexagon_creation_by_angle(right_container,"right_container",s_radius,r_center_poly_x,r_center_poly_y,padding,2);
+    hexagon_creation_by_angle(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,2);
+
+    //create_hexagon_shape(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,element_number);
+
+
+}
+
+function remove_line(element_index) {//remove element from line graph
+    var graph=d3.selectAll(".graph");
+    var line_count=parseInt(graph.attr("line_number"));
+
     d3.selectAll('path[element_index="' + (element_index) + '"]').remove();
+    d3.selectAll('g[element_index="' + (element_index) + '"]').remove();
+    line_count--;
+    if(line_count<=0){
+        d3.selectAll(".graph_container").remove();
+    }
+    else
+        graph.attr("line_number",line_count);
 
 }
 
@@ -66,12 +237,16 @@ function handle_graph(element_index)
     var transition_y;
 
     var graph=d3.selectAll(".graph");
-    var line_number=0;
+    var graph_container=d3.selectAll(".upper_container");
+
+    var line_number=0;//keep count of how many line appended currently
     var has_x_axis_exist=false;
 
 
     if(graph.empty()==true){
-        graph = canvas.append("svg")
+        console.log("empty");
+
+        graph = graph_container.append("g").attr("class","graph_container").append("svg")
             .attr("width", w + graph_margin[1] + graph_margin[3])
             .attr("height", h + graph_margin[0] + graph_margin[2])
             .attr("line_number",1)
@@ -110,8 +285,8 @@ function handle_graph(element_index)
             return y(d);
         });
 
-    if(line_number<3)
-    draw_graph(graph,(line_number+1) ,data1,x,y, line1,has_x_axis_exist,h,transition_y,element_index);
+    if(line_number<3)//at most 3 data append
+        draw_graph(graph,(line_number+1) ,data1,x,y, line1,has_x_axis_exist,h,transition_y,element_index);
 }
 
 function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_x_axis_exist,transition_of_x,transition_of_y,element_index) {
@@ -130,12 +305,14 @@ function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_
         graph_area.append("g")
             .attr("class", "y axis axis"+line_number)
             .attr("transform", "translate("+transition_of_y+",0)")
+            .attr("element_index",element_index)
             .call(yAxisLeft);
     }
     else{
         graph_area.append("g")
             .attr("class", "y axis axis"+line_number)
             .attr("transform", "translate("+transition_of_y+",0)")
+            .attr("element_index",element_index)
             .call(yAxisLeft);
     }
     // create left yAxis
@@ -158,107 +335,8 @@ function draw_graph(graph,line_number, data, x_scalar,y_scalar,line_creator,has_
 
 
 }
-function mousedown(d) {
-    console.log("coordinates: "+d3.event.pageX+"  "+d3.event.pageY+"py");
-}
-function polygons() {
-        scaleX = d3.scaleLinear()
-        .domain([-30,30])
-        .range([0,600]);
 
-        scaleY = d3.scaleLinear()
-            .domain([0,50])
-            .range([500,0]);
-
-        poly = [{"x":0.0, "y":25.0},
-            {"x":8.5,"y":23.4},
-            {"x":13.0,"y":21.0},
-            {"x":19.0,"y":15.5}];
-
-
-
-        var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
-
-
-
-    var left_container = canvas.append("g")
-        .attr("transform", "translate(" + l_center_poly_x + "," +l_center_poly_y + ")");
-
-
-    var right_container = canvas.append("g")
-        .attr("transform", "translate(" + r_center_poly_x + "," +r_center_poly_y + ")");
-
-
-    var left_hexagon = left_container.append("path")
-            .attr("d", drawHexagon(calculate_hexagon(l_center_poly_x,l_center_poly_y,big_radius)))
-            .attr("stroke", "red")
-            .attr("stroke-dasharray","20,5")
-            .attr("stroke-width", 3)
-            .attr("fill", "rgba(255,0,0,0.4)")
-            .classed("big_hexagon", true);
-
-    var right_hexagon = right_container.append("path")
-        .attr("d", drawHexagon(calculate_hexagon(r_center_poly_x,r_center_poly_y,big_radius)))
-        .attr("stroke", "red")
-        .attr("stroke-dasharray","20,5")
-        .attr("stroke-width", 3)
-        .attr("fill", "rgba(255,0,0,0.4)")
-        .classed("big_hexagon", true);
-
-
-    var middle_line = canvas.append("path")
-        .attr("d", lineGenerator(line_point))
-        .attr("stroke", "red")
-        .attr("stroke-dasharray","20,5");
-
-    var r_small_center_hexagon=right_container.append("path")
-        .attr("d", drawHexagon(calculate_hexagon(r_center_poly_x,r_center_poly_y,s_radius)))
-        .attr("stroke", "red")
-        .attr("stroke-dasharray","20,5")
-        .attr("stroke-width", 3)
-        .on("mousedown", mousedown)
-        .on("click", mouseClick)
-        .on("mouseup", mouseup)
-        .on("mouseover", mouseover)
-        .on("mouseout", mouseout);
-
-
-    var l_small_center_hexagon=left_container.append("path")
-        .attr("d", drawHexagon(calculate_hexagon(l_center_poly_x,l_center_poly_y,s_radius)))
-        .attr("stroke", "red")
-        .attr("stroke-dasharray","20,5")
-        .attr("stroke-width", 3)
-        .on("mousedown", mousedown)
-        .on("click", mouseClick)
-        .on("mouseup", mouseup)
-        .on("mouseover", mouseover)
-        .on("mouseout", mouseout);
-
-
-    create_hexagon_shape(right_container,"right_container",s_radius,r_center_poly_x,r_center_poly_y,padding,element_number);
-    create_hexagon_shape(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,element_number);
-
-
-}
-
-
-
-function calculate_hexagon(xp,yp,radius) {
-    var h = (Math.sqrt(3)/2);
-
-        return hexagonData = [
-        { "x": radius+xp,   "y": yp},
-        { "x": radius/2+xp,  "y": radius*h+yp},
-        { "x": -radius/2+xp,  "y": radius*h+yp},
-        { "x": -radius+xp,  "y": yp},
-        { "x": -radius/2+xp,  "y": -radius*h+yp},
-        { "x": radius/2+xp, "y": -radius*h+yp}];
-}
-function handle_elements(){
-console.log("handle element");
-}
-
-
+/*
 function handle_scroll_event(parent_obj,unit_coefficient) {
     var elements;
     if (remaining > 0) {
@@ -266,7 +344,7 @@ function handle_scroll_event(parent_obj,unit_coefficient) {
         elements=parent_obj.selectAll('path[floor="' + (floor_number + 1) + '"]').each(function (d, i) {
             InTransition=true;
 
-                var curr_obj = d3.select(this);
+            var curr_obj = d3.select(this);
             var index = curr_obj.attr("index");
             var new_center_offset = calculate_hexagon_center(index,floor_number+2, padding, s_radius);
             curr_obj.transition().on("end", function(){ console.log("all done") });
@@ -301,21 +379,87 @@ function handle_scroll_event(parent_obj,unit_coefficient) {
         }
 
 
+    }*/
+
+function handle_scroll_event_updated(parent_obj,unit_coefficient) {
+    var elements;
+    var central_hexagon=parent_obj.selectAll(".center_hexagon");
+    var parent_x=parseFloat(central_hexagon.attr("cx"));
+    var parent_y=parseFloat(central_hexagon.attr("cy"));
+    InTransition=true;
+
+    /*if (remaining > 0) {
+
+        elements=parent_obj.selectAll('path[floor="' + (floor_number + 1) + '"]').each(function (d, i) {
+
+
+            var curr_obj = d3.select(this);
+            var index = curr_obj.attr("index");
+            var new_center_offset = calculate_hexagon_center(index,floor_number+2, padding, s_radius);
+            curr_obj.transition().on("end", function(){ console.log("all done") });
+            curr_obj.transition()
+                .duration(1000)
+                .attr("transform", "translate(" + (unit_coefficient*new_center_offset.x) + ", " + (unit_coefficient*new_center_offset.y) + ")")
+
+        });
+    }*/
+    for (var g = 0; g < floor_number+1; g++) {
+
+        elements+=parent_obj.selectAll('path[floor="' + (g) + '"]').each(function (d, i) {
+            var curr_obj = d3.select(this);
+            var index = curr_obj.attr("index");
+            var cx = parseFloat(curr_obj.attr("cx"));
+            var cy = parseFloat(curr_obj.attr("cy"));
+            var dif_vector={"x":parent_x-cx,"y":parent_y-cy};
+
+            curr_obj.transition()
+                .duration(1000)
+                .attr("transform", "translate(" + (-unit_coefficient* dif_vector.x) + ", " + (-unit_coefficient*dif_vector.y) + ")")
+                .transition()
+                .delay(0.5)
+                .on("end",function(){
+                    if(unit_coefficient<0) {
+                        handle_elements(elements);
+                        handle_scroll_event_updated(parent_obj, 0);
+                    }
+                    else {
+                        InTransition=false;
+                        return;
+                    }
+                })
+
+        })
     }
 
-function zoom() {
-    if(!InTransition) {
-        console.log("zoooooom");
 
-        var parent_obj = d3.select(this.parentNode);
-        /*obj
-        .transition()
-        .attr("transform", "translate(320, 0)")
-        .style("fill", "black");*/
-        handle_scroll_event(parent_obj, -1);
-    }
+}
+function handle_elements(elements){
+    console.log("handle element");
 }
 
+function zoom() {
+    var direction = d3.event.sourceEvent.deltaY > 0 ? 'down' : 'up'; ;
+
+    console.log(direction);
+     if(!InTransition) {
+        var parent_obj = d3.select(this.parentNode);
+        zoom_event_garbage_collector();
+        handle_scroll_event_updated(parent_obj, -1);
+    }
+}
+function zoom_event_garbage_collector(){//can be add any feature to remove on zoom event
+    d3.selectAll(".clicked").each(function (d, i) {
+        console.log("garbage");
+        var obj = d3.select(this);
+        obj.attr("fill","black");
+        var event = document.createEvent('SVGEvents');
+        event.initEvent("click",true,true);
+        this.dispatchEvent(event);
+    });
+}
+function mousedown(d) {
+    console.log("coordinates: "+d3.event.pageX+"  "+d3.event.pageY+"py");
+}
 
 function mouseClick(d) {
     var obj = d3.select(this);
@@ -325,13 +469,17 @@ function mouseClick(d) {
         if (!obj.classed("clicked")) {
             obj.classed("clicked", true);
             obj.transition().attr("fill", "red");
-            obj.call(d3.zoom().on("zoom", zoom));
+            obj.call(d3.zoom()
+                .on("zoom", zoom));
+            obj.on("dblclick.zoom", null);
+
 
             handle_graph(element_index);
 
         } else {
+            console.log("deselect");
             obj.classed("clicked", false);
-            obj.transition().attr("fill", "blue");
+            obj.transition().attr("fill", "black");
             obj.on('.zoom', null);
 
             remove_line(element_index);
@@ -352,8 +500,18 @@ function mouseover(d,i) {
         var obj_c_x = obj.attr("cx");
         var obj_c_y = obj.attr("cy");
 
-        console.log("point" + obj_c_x + " " + obj_c_y);
+        //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
+        //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
+
+        d3.select("#tooltip")
+            .style("left", obj_c_x*2 + "px")
+            .style("top", obj_c_y *2+ "px")
+            .select("#value")
+            .text(10);
+
+
+        d3.select("#tooltip").classed("hidden", false);
 
         var startPoint = pathStartPoint(obj.node());
 
@@ -380,6 +538,17 @@ function mouseover(d,i) {
 
     }
 }
+function mouseout() {
+    if (!InTransition) {
+
+        canvas.selectAll(".small_selection_ball").remove();
+        if(!d3.select(this).classed("clicked"))
+            d3.select(this).attr("fill", "black");
+        d3.select("#tooltip").classed("hidden", true);
+
+    }
+}
+
 function transition(trans_obj,path,startpoint) {
 
    if(d3.selectAll(".selected").empty()==true)
@@ -412,19 +581,6 @@ function translateAlong(path,startpoint) {
 
 }
 
-
-function mouseout() {
-    if (!InTransition) {
-
-        console.log("out");
-        canvas.selectAll(".small_selection_ball").remove();
-        d3.selectAll(".selected").classed("selected", false);
-        d3.select(this)
-            .attr("fill", "green")
-
-    }
-}
-
 function pathStartPoint(path) {
 
     console.log(path);
@@ -433,7 +589,7 @@ function pathStartPoint(path) {
     return midpoint;
 }
 
-function create_hexagon_shape(container,container_name,radius,x,y,padding,element_number){
+/*function create_hexagon_shape(container,container_name,radius,x,y,padding,element_number){
 
     var floor_number=element_number/6;
     var remaining=element_number%6;
@@ -443,7 +599,7 @@ function create_hexagon_shape(container,container_name,radius,x,y,padding,elemen
         for (var k=0;k<6;k++){
             var center_diff= calculate_hexagon_center(k,i+1,padding,radius);
             var small_hexagon=container.append("path")
-                .attr("d", drawHexagon(calculate_hexagon(x+center_diff.x,y+center_diff.y,radius)))
+                .attr("d", drawPolygon(calculate_hexagon(x+center_diff.x,y+center_diff.y,radius)))
                 .attr("stroke", "red")
                 .attr("stroke-dasharray","20,5")
                 .attr("stroke-width", 3)
@@ -459,10 +615,10 @@ function create_hexagon_shape(container,container_name,radius,x,y,padding,elemen
                 .on("mouseout", mouseout);
             console.log("hexagon creation "+container_name+" x: "+(x-center_diff.x)+" y: "+(y-center_diff.x));
 
-            /*small_hexagon.transition()
+            small_hexagon.transition()
                 .duration(10000)
                 .attr("transform", "translate(" + (-center_diff.x) + ", " + (-center_diff.y) + ")")
-                .style("fill", "black");*/
+                .style("fill", "black");
         }
 
     }
@@ -471,7 +627,7 @@ function create_hexagon_shape(container,container_name,radius,x,y,padding,elemen
         for (var z=0;z<remaining;z++){
             var center_diff= calculate_hexagon_center(z,i+1,padding,radius);
             var small_hexagon=container.append("path")
-                .attr("d", drawHexagon(calculate_hexagon(x+center_diff.x,y+center_diff.y,radius)))
+                .attr("d", drawPolygon(calculate_hexagon(x+center_diff.x,y+center_diff.y,radius)))
                 .attr("stroke", "red")
                 .attr("stroke-dasharray","20,5")
                 .attr("stroke-width", 3)
@@ -489,6 +645,7 @@ function create_hexagon_shape(container,container_name,radius,x,y,padding,elemen
     }
 
 }
+
 function calculate_hexagon_center(neig_number,multiplier,padding,r){
     var d_center_diff_x=((3*r)/2+(padding*Math.sqrt(3)/2))*multiplier;
     var d_center_diff_y=((r*Math.sqrt(3)/2)+(padding/2))*multiplier;
@@ -514,4 +671,54 @@ function calculate_hexagon_center(neig_number,multiplier,padding,r){
         return {x: d_center_diff_x, y: -d_center_diff_y};
     }
 
+}*/
+
+function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,floor_number){
+
+    var radius_arr=[];
+    var angle=[];
+
+    for (var i=0;i<floor_number;i++) {
+        var distance = (radius * Math.sqrt(3) / 2) + ((i * 2 + 1) * radius* Math.sqrt(3) / 2) + ((i + 1) * padding);
+        radius_arr=[];
+        angle=[];
+        radius_arr.push(distance);
+        angle.push(0);
+        for (var z=0;z<i;z++) {
+            var curr_angle = 360 / ((z + 2) * 6);
+            var radians = (Math.PI / 180) * curr_angle;
+            radius_arr.push(Math.cos(radians) * distance);
+            angle.push(curr_angle);
+
+        }
+
+        for (var l = 0; l < radius_arr.length; l++) {
+            for (var k = 0; k < 6; k++) {
+                var angle_c=30+angle[l]+60*(k);
+                var radians = (Math.PI / 180) * angle_c;
+
+                var d_center_diff_x = x + Math.cos(radians) * radius_arr[l];
+                var d_center_diff_y = y + Math.sin(radians) * radius_arr[l];
+                //var center_diff = rotate(x, y, d_center_diff_x, d_center_diff_y, (angle * k));
+                var small_hexagon = container.append("path")
+                    .attr("d", drawPolygon(calculate_hexagon(d_center_diff_x, d_center_diff_y, radius)))
+                    .attr("stroke", "red")
+                    .attr("stroke-dasharray", "20,5")
+                    .attr("stroke-width", 3)
+                    .attr("cx", d_center_diff_x)
+                    .attr("cy", d_center_diff_y)
+                    .attr("floor", i)
+                    .attr("index", l*6+k)
+                    .classed(container_name, true)
+                    .on("mousedown", mousedown)
+                    .on("click", mouseClick)
+                    .on("mouseup", mouseup)
+                    .on("mouseover", mouseover)
+                    .on("mouseout", mouseout);
+
+
+            }
+
+        }
+    }
 }
