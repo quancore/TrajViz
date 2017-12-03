@@ -1,5 +1,10 @@
 
+var Series = require('pandas-js').Series;
+var DataFrame = require('pandas-js').DataFrame;
+
+
 var canvas;//most outer container
+
 
 var w = 1200, h = 550;//most outer container size
 
