@@ -28,9 +28,6 @@ var remaining=element_number%6;*/
 
 var InTransition=false;//transition parameter.use for disable mouse event during zoom event
 
-
-
-
 var data1 = [3, 6, 2, 7, 5, 2, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
 var data2 = [543, 367, 215, 56, 65, 62, 87, 156, 287, 398, 523, 685, 652, 674, 639, 619, 589, 558, 605, 574, 564, 496, 525, 476, 432, 458, 421, 387, 375, 368];
 
@@ -39,7 +36,23 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
     .y(function(d) { return d.y; })
     .curve(d3.curveCardinalClosed.tension("1"));
 
+/***********************
+    Data related code
+***********************/
+$(document).ready(function() {
+    $.ajax({
+        type: "GET",
+        url: "data/steam/1_12_2017_steam.csv",
+        dataType: "text",
+        success: function(data) {processData(data);}
+     });
+});
 
+function processData(allText) {
+    steam_data = d3.csvParse(allText);
+    console.log(steam_data)
+}
+/**********************/
 function calculate_hexagon(xp,yp,radius) {//small hexagon drawer
     var h = (Math.sqrt(3)/2);
 
@@ -503,13 +516,23 @@ function mouseover(d,i) {
         //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
+        var title = 'Random Title'
+        var rank = d3.select(this).attr("index")
+        var players = 0
 
         d3.select("#tooltip")
             .style("left", obj_c_x*2 + "px")
             .style("top", obj_c_y *2+ "px")
-            .select("#value")
-            .text(10);
+            .select("#title")
+            .text(title);
 
+        d3.select("#tooltip")
+            .select("#rank")
+            .text(rank);
+
+        d3.select("#tooltip")
+            .select("#players")
+            .text(players);
 
         d3.select("#tooltip").classed("hidden", false);
 
