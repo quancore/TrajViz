@@ -74,10 +74,10 @@ function loadTextAsData(allText, key, platform) {
     data = d3.csvParse(allText);
     switch(platform) {
         case 'steam':
-            steam_data.key = data;
+            steam_data[key] = data;
             break;
         case 'twitch':
-            twitch_data.key = data;
+            twitch_data[key] = data;
             break;
         default:
             console.log('Unknown platform specified: "' + platform + '"')
