@@ -50,7 +50,7 @@ $(document).ready(function() {
     fetchData(1, 12, 2017, 'twitch')
 });
 
-function getDateAsString(day, mont, year) {
+function getDateAsString(day, month, year) {
     return day + '_' + month + '_' + year
 }
 
@@ -85,7 +85,7 @@ function loadTextAsData(allText, key, platform) {
     }
 }
 
-function getGameDataByRank(day, mont, year, rank, platform) {
+function getGameDataByRank(day, month, year, rank, platform) {
     data = null
     switch(platform) {
         case 'steam':
