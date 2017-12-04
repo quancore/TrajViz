@@ -39,20 +39,72 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
+var version = 0.6
+var steam_data = {}
+var twitch_data = {}
+
+console.log('Version: '.concat(version))
+
 $(document).ready(function() {
-    $.ajax({
-        type: "GET",
-        url: "data/steam/1_12_2017_steam.csv",
-        dataType: "text",
-        success: function(data) {processData(data);}
-     });
+    fetchData(1, 12, 2017, 'steam')
+    fetchData(1, 12, 2017, 'twitch')
 });
 
-function processData(allText) {
-    steam_data = d3.csvParse(allText);
-    console.log(steam_data)
+function getDateAsString(day, mont, year) {
+    return day + '_' + month + '_' + year
+}
+
+function fetchData(day, month, year, platform) {
+    console.log('Fetching data for ' + platform)
+
+    dateAsString = getDateAsString(day, month, year)
+    fileNameAsString = dateAsString + '_' + platform + '.csv'
+    fullStringUrl = 'data/' + platform + '/' + fileNameAsString
+    $.ajax({
+        type: "GET",
+        url: fullStringUrl,
+        dataType: "text",
+        success: function(data) {loadTextAsData(data, dateAsString, platform);}
+    });
+}
+
+function loadTextAsData(allText, key, platform) {
+    console.log('Loading ' + platform + ' data into memmory')
+
+    data = d3.csvParse(allText);
+    switch(platform) {
+        case 'steam':
+            steam_data.key = data;
+            break;
+        case 'twitch':
+            twitch_data.key = data;
+            break;
+        default:
+            console.log('Unknown platform specified: "' + platform + '"')
+            break;
+    }
+}
+
+function getGameDataByRank(day, mont, year, rank, platform) {
+    data = null
+    switch(platform) {
+        case 'steam':
+            data = steam_data
+            break;
+        case 'twitch':
+            data = twitch_data
+            break;
+        default:
+            break;
+    }
+    if (data) {
+        data = data[getDateAsString(day, month, year)]
+        return data[rank]
+    }
+    return null
 }
 /**********************/
+
 function calculate_hexagon(xp,yp,radius) {//small hexagon drawer
     var h = (Math.sqrt(3)/2);
 
