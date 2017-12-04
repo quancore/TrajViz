@@ -568,9 +568,11 @@ function mouseover(d,i) {
         //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
-        var title = 'Random Title'
+        // TODO add 'platform' attribute to hexagon with
         var rank = d3.select(this).attr("index")
-        var players = 0
+        var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
+        var title = gameData['Name']
+        var players = gameData['Daily Peak']
 
         d3.select("#tooltip")
             .style("left", obj_c_x*2 + "px")
