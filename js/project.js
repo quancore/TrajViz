@@ -39,7 +39,7 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
-var version = 0.6
+var version = 0.7
 var steam_data = {}
 var twitch_data = {}
 
