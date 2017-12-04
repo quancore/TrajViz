@@ -53,6 +53,7 @@ function processData(allText) {
     console.log(steam_data)
 }
 /**********************/
+
 function calculate_hexagon(xp,yp,radius) {//small hexagon drawer
     var h = (Math.sqrt(3)/2);
 
