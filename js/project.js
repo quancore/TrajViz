@@ -580,7 +580,8 @@ function mouseover(d,i) {
 
         // TODO add 'platform' attribute to hexagon with
         var rank = d3.select(this).attr("index")
-        var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
+        var platform = d3.select(this).attr("container")
+        var gameData = getGameDataByRank(1, 12, 2017, rank, platform)
         var title = gameData['Name']
         var players = gameData['Daily Peak']
 
