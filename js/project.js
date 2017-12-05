@@ -45,7 +45,7 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
-var version = 0.82
+var version = 0.83
 var steam_data = {}
 var twitch_data = {}
 
@@ -622,6 +622,7 @@ function mouseover(d,i) {
 
 
         obj.attr("fill", "rgba(255,0,0,0.4)")
+        //obj.attr("fill", "url(assets/placeholder.png)")
 
     }
 }
