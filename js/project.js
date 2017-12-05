@@ -39,7 +39,7 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
-var version = 0.82
+var version = 0.83
 var steam_data = {}
 var twitch_data = {}
 
@@ -570,12 +570,9 @@ function mouseover(d,i) {
 
         // TODO add 'platform' attribute to hexagon with
         var rank = d3.select(this).attr("index")
-        //var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
-        //var title = gameData['Name']
-        //var players = gameData['Daily Peak']
-
-        var title = "smth"
-        var players = 0
+        var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
+        var title = gameData['Name']
+        var players = gameData['Daily Peak']
 
         d3.select("#tooltip")
             .style("left", obj_c_x*2 + "px")
