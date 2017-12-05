@@ -45,7 +45,7 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
-var version = 0.84
+var version = 0.85
 var steam_data = {}
 var twitch_data = {}
 
@@ -579,7 +579,7 @@ function mouseover(d,i) {
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
         // TODO add 'platform' attribute to hexagon with
-        var rank = d3.select(this).attr("index") + 1
+        var rank = parseInt(d3.select(this).attr("index"), 10) + 1
         var platform = d3.select(this).attr("container")
 
         // This ignores the central hexagon
