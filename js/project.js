@@ -23,7 +23,7 @@ var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagon
 var between_hexagons=600;//distance between two big hexagons
 
 var r_container_name="steam"
-var l_container_name="twich"
+var l_container_name="twitch"
 
 
 /* For star shape creation
