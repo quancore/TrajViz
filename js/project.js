@@ -1,5 +1,7 @@
 
+
 var canvas;//most outer container
+
 
 var w = 1200, h = 550;//most outer container size
 
@@ -19,6 +21,10 @@ var padding=5;//padding between big container polygons
 var middle_polygon_margin=10;//top and bottom padding of middle polygon containers
 var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagons margin array
 var between_hexagons=600;//distance between two big hexagons
+
+var r_container_name="steam"
+var l_container_name="twich"
+
 
 /* For star shape creation
 var element_number=12;
@@ -247,6 +253,8 @@ function polygons() {
         .attr("stroke-width", 3)
         .attr("cx",r_center_poly_x)
         .attr("cy",r_center_poly_y)
+        .attr("hexagon-type", "center_right")
+        .attr("container",r_container_name)
         .on("mousedown", mousedown)
         .on("click", mouseClick)
         .on("mouseup", mouseup)
@@ -263,6 +271,8 @@ function polygons() {
         .attr("stroke-width", 3)
         .attr("cx",l_center_poly_x)
         .attr("cy",l_center_poly_y)
+        .attr("hexagon-type", "center_left")
+        .attr("container",l_container_name)
         .on("mousedown", mousedown)
         .on("click", mouseClick)
         .on("mouseup", mouseup)
@@ -272,8 +282,8 @@ function polygons() {
 
 
 
-    hexagon_creation_by_angle(right_container,"right_container",s_radius,r_center_poly_x,r_center_poly_y,padding,2);
-    hexagon_creation_by_angle(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,2);
+    hexagon_creation_by_angle(right_container,r_container_name,s_radius,r_center_poly_x,r_center_poly_y,padding,2);
+    hexagon_creation_by_angle(left_container,l_container_name,s_radius,l_center_poly_x,l_center_poly_y,padding,2);
 
     //create_hexagon_shape(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,element_number);
 
@@ -754,7 +764,7 @@ function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,f
 
     var radius_arr=[];
     var angle=[];
-
+    var floor_base_index=0;
     for (var i=0;i<floor_number;i++) {
         var distance = (radius * Math.sqrt(3) / 2) + ((i * 2 + 1) * radius* Math.sqrt(3) / 2) + ((i + 1) * padding);
         radius_arr=[];
@@ -768,7 +778,6 @@ function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,f
             angle.push(curr_angle);
 
         }
-
         for (var l = 0; l < radius_arr.length; l++) {
             for (var k = 0; k < 6; k++) {
                 var angle_c=30+angle[l]+60*(k);
@@ -785,8 +794,9 @@ function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,f
                     .attr("cx", d_center_diff_x)
                     .attr("cy", d_center_diff_y)
                     .attr("floor", i)
-                    .attr("index", l*6+k)
-                    .classed(container_name, true)
+                    .attr("hexagon-type", "neigbourhood")
+                    .attr("container",container_name)
+                    .attr("index", floor_base_index+l*6+k)
                     .on("mousedown", mousedown)
                     .on("click", mouseClick)
                     .on("mouseup", mouseup)
@@ -797,5 +807,7 @@ function hexagon_creation_by_angle(container,container_name,radius,x,y,padding,f
             }
 
         }
+        floor_base_index=floor_base_index+radius_arr.length*6
+
     }
 }

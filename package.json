@@ -15,7 +15,8 @@
   "license": "MIT",
   "dependencies": {
     "d3-geo": "^1.9.0",
-    "gulp": "^3.9.1"
+    "gulp": "^3.9.1",
+    "pandas-js": "^0.2.4"
   },
   "devDependencies": {
     "gulp-clean": "~0.3.2",
