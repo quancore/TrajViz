@@ -34,9 +34,6 @@ var remaining=element_number%6;*/
 
 var InTransition=false;//transition parameter.use for disable mouse event during zoom event
 
-
-
-
 var data1 = [3, 6, 2, 7, 5, 2, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
 var data2 = [543, 367, 215, 56, 65, 62, 87, 156, 287, 398, 523, 685, 652, 674, 639, 619, 589, 558, 605, 574, 564, 496, 525, 476, 432, 458, 421, 387, 375, 368];
 
@@ -45,6 +42,74 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
     .y(function(d) { return d.y; })
     .curve(d3.curveCardinalClosed.tension("1"));
 
+/***********************
+    Data related code
+***********************/
+var version = 0.83
+var steam_data = {}
+var twitch_data = {}
+
+console.log('Version: '.concat(version))
+
+$(document).ready(function() {
+    fetchData(1, 12, 2017, 'steam')
+    fetchData(1, 12, 2017, 'twitch')
+});
+
+function getDateAsString(day, month, year) {
+    return day + '_' + month + '_' + year
+}
+
+function fetchData(day, month, year, platform) {
+    console.log('Fetching data for ' + platform)
+
+    dateAsString = getDateAsString(day, month, year)
+    fileNameAsString = dateAsString + '_' + platform + '.csv'
+    fullStringUrl = 'data/' + platform + '/' + fileNameAsString
+    $.ajax({
+        type: "GET",
+        url: fullStringUrl,
+        dataType: "text",
+        success: function(data) {loadTextAsData(data, dateAsString, platform);}
+    });
+}
+
+function loadTextAsData(allText, key, platform) {
+    console.log('Loading ' + platform + ' data into memmory')
+
+    data = d3.csvParse(allText);
+    switch(platform) {
+        case 'steam':
+            steam_data[key] = data;
+            break;
+        case 'twitch':
+            twitch_data[key] = data;
+            break;
+        default:
+            console.log('Unknown platform specified: "' + platform + '"')
+            break;
+    }
+}
+
+function getGameDataByRank(day, month, year, rank, platform) {
+    data = null
+    switch(platform) {
+        case 'steam':
+            data = steam_data
+            break;
+        case 'twitch':
+            data = twitch_data
+            break;
+        default:
+            break;
+    }
+    if (data) {
+        data = data[getDateAsString(day, month, year)]
+        return data[rank]
+    }
+    return null
+}
+/**********************/
 
 function calculate_hexagon(xp,yp,radius) {//small hexagon drawer
     var h = (Math.sqrt(3)/2);
@@ -513,13 +578,25 @@ function mouseover(d,i) {
         //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
+        // TODO add 'platform' attribute to hexagon with
+        var rank = d3.select(this).attr("index")
+        var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
+        var title = gameData['Name']
+        var players = gameData['Daily Peak']
 
         d3.select("#tooltip")
             .style("left", obj_c_x*2 + "px")
             .style("top", obj_c_y *2+ "px")
-            .select("#value")
-            .text(10);
+            .select("#title")
+            .text(title);
 
+        d3.select("#tooltip")
+            .select("#rank")
+            .text(rank);
+
+        d3.select("#tooltip")
+            .select("#players")
+            .text(players);
 
         d3.select("#tooltip").classed("hidden", false);
 
@@ -545,6 +622,7 @@ function mouseover(d,i) {
 
 
         obj.attr("fill", "rgba(255,0,0,0.4)")
+        //obj.attr("fill", "url(assets/placeholder.png)")
 
     }
 }
