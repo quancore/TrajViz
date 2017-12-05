@@ -578,17 +578,11 @@ function mouseover(d,i) {
         //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
-        // TODO add 'platform' attribute to hexagon with
-        var rank = parseInt(d3.select(this).attr("index"), 10) + 1
+        var index = d3.select(this).attr("index")
+        var rank = (index ? parseInt(index, 10) + 1 : 0)
         var platform = d3.select(this).attr("container")
-
-        // This ignores the central hexagon
-        if (rank) {
-            gameData = getGameDataByRank(1, 12, 2017, rank, platform)
-        } else {
-            gameData = getGameDataByRank(1, 12, 2017, 0, platform)
-        }
-
+        
+        gameData = getGameDataByRank(1, 12, 2017, rank, platform)
         title = gameData['Name']
         players = gameData['Daily Peak']
 
