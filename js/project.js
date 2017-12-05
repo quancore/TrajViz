@@ -570,9 +570,12 @@ function mouseover(d,i) {
 
         // TODO add 'platform' attribute to hexagon with
         var rank = d3.select(this).attr("index")
-        var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
-        var title = gameData['Name']
-        var players = gameData['Daily Peak']
+        //var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
+        //var title = gameData['Name']
+        //var players = gameData['Daily Peak']
+
+        var title = "smth"
+        var players = 0
 
         d3.select("#tooltip")
             .style("left", obj_c_x*2 + "px")
@@ -612,6 +615,7 @@ function mouseover(d,i) {
 
 
         obj.attr("fill", "rgba(255,0,0,0.4)")
+        //obj.attr("fill", "url(assets/placeholder.png)")
 
     }
 }
