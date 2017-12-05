@@ -23,7 +23,7 @@ var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagon
 var between_hexagons=600;//distance between two big hexagons
 
 var r_container_name="steam"
-var l_container_name="twich"
+var l_container_name="twitch"
 
 
 /* For star shape creation
@@ -45,7 +45,7 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
-var version = 0.83
+var version = 0.84
 var steam_data = {}
 var twitch_data = {}
 
@@ -579,10 +579,18 @@ function mouseover(d,i) {
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
         // TODO add 'platform' attribute to hexagon with
-        var rank = d3.select(this).attr("index")
-        var gameData = getGameDataByRank(1, 12, 2017, rank, 'steam')
-        var title = gameData['Name']
-        var players = gameData['Daily Peak']
+        var rank = d3.select(this).attr("index") + 1
+        var platform = d3.select(this).attr("container")
+
+        // This ignores the central hexagon
+        if (rank) {
+            gameData = getGameDataByRank(1, 12, 2017, rank, platform)
+        } else {
+            gameData = getGameDataByRank(1, 12, 2017, 0, platform)
+        }
+
+        title = gameData['Name']
+        players = gameData['Daily Peak']
 
         d3.select("#tooltip")
             .style("left", obj_c_x*2 + "px")
