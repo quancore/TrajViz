@@ -22,8 +22,20 @@ var middle_polygon_margin=10;//top and bottom padding of middle polygon containe
 var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagons margin array
 var between_hexagons=600;//distance between two big hexagons
 
-var r_container_name="steam"
-var l_container_name="twitch"
+var l_big_container_name="left_container";
+var r_big_container_name="rigth_container";
+var u_big_container_name="upper_container";
+var lo_big_container_name="lower_container";
+
+var r_container_name="steam";
+var l_container_name="twitch";
+
+var hover_container_radius=100;//hover hexagon radius
+
+var point_transition_time=2000;//hover point transition time
+var hover_point_radius=4;// hover point radius
+var point_hover_color="blue";
+var point_selection_color="yellow";
 
 
 /* For star shape creation
@@ -45,27 +57,29 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
 /***********************
     Data related code
 ***********************/
-var version = 0.86
-var steam_data = {}
-var twitch_data = {}
+var version = 0.86;
+var steam_data = {};
+var twitch_data = {};
 
-console.log('Version: '.concat(version))
+console.log('Version: '.concat(version));
 
 $(document).ready(function() {
-    fetchData(1, 12, 2017, 'steam')
+    fetchData(1, 12, 2017, 'steam');
     fetchData(1, 12, 2017, 'twitch')
 });
+
+
 
 function getDateAsString(day, month, year) {
     return day + '_' + month + '_' + year
 }
 
 function fetchData(day, month, year, platform) {
-    console.log('Fetching data for ' + platform)
+    console.log('Fetching data for ' + platform);
 
-    dateAsString = getDateAsString(day, month, year)
-    fileNameAsString = dateAsString + '_' + platform + '.csv'
-    fullStringUrl = 'data/' + platform + '/' + fileNameAsString
+    dateAsString = getDateAsString(day, month, year);
+    fileNameAsString = dateAsString + '_' + platform + '.csv';
+    fullStringUrl = 'data/' + platform + '/' + fileNameAsString;
     $.ajax({
         type: "GET",
         url: fullStringUrl,
@@ -75,7 +89,7 @@ function fetchData(day, month, year, platform) {
 }
 
 function loadTextAsData(allText, key, platform) {
-    console.log('Loading ' + platform + ' data into memmory')
+    console.log('Loading ' + platform + ' data into memory');
 
     data = d3.csvParse(allText);
     switch(platform) {
@@ -86,25 +100,25 @@ function loadTextAsData(allText, key, platform) {
             twitch_data[key] = data;
             break;
         default:
-            console.log('Unknown platform specified: "' + platform + '"')
+            console.log('Unknown platform specified: "' + platform + '"');
             break;
     }
 }
 
 function getGameDataByRank(day, month, year, rank, platform) {
-    data = null
+    data = null;
     switch(platform) {
         case 'steam':
-            data = steam_data
+            data = steam_data;
             break;
         case 'twitch':
-            data = twitch_data
+            data = twitch_data;
             break;
         default:
             break;
     }
     if (data) {
-        data = data[getDateAsString(day, month, year)]
+        data = data[getDateAsString(day, month, year)];
         return data[rank]
     }
     return null
@@ -178,33 +192,55 @@ function init() {
         //class to make it responsive
         .classed("svg-content-responsive", true);
 
+        var cntr=d3.select(".svg-container")
+            .on("scroll.scroller",function (d) {
+                console.log("scroolll");
+                d3.event.preventDefault();
+            });
+        console.log(cntr);
+
         canvas.on('mousedown', mousedown);
+
         polygons();
 
 
 
 }
+$(document).ready(function() {
+    console.log("ready");
+
+    document.getElementsByClassName( "svg-container" )[0].onwheel = function(event){
+        event.preventDefault();
+    };
+    document.getElementsByClassName( "svg-container" )[0].onmousewheel = function(event){
+        event.preventDefault();
+    };
+});
+
+
+
+
 
 function polygons() {
 
 
         //var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
 
+    var upper_container = canvas.append("g")
+        .attr("class",u_big_container_name);
+
+    var lower_container = canvas.append("g")
+        .attr("class",lo_big_container_name);
 
 
     var left_container = canvas.append("g")
-        .attr("transform", "translate(" + l_center_poly_x + "," +l_center_poly_y + ")");
+        .attr("transform", "translate(" + l_center_poly_x + "," +l_center_poly_y + ")")
+        .attr("class",l_big_container_name);
 
 
     var right_container = canvas.append("g")
-        .attr("transform", "translate(" + r_center_poly_x + "," +r_center_poly_y + ")");
-
-    var upper_container = canvas.append("g")
-        .attr("class","upper_container");
-
-    var lower_container = canvas.append("g")
-        .attr("class","upper_container");
-
+        .attr("transform", "translate(" + r_center_poly_x + "," +r_center_poly_y + ")")
+        .attr("class",r_big_container_name);
 
 
     var left_hexagon = left_container.append("path")
@@ -511,11 +547,35 @@ function handle_scroll_event_updated(parent_obj,unit_coefficient) {
 function handle_elements(elements){
     console.log("handle element");
 }
+function create_hover_hexagon(center_x,center_y,container) {
+    var central_distance=(s_radius*Math.sqrt(3)/2)+(hover_container_radius*Math.sqrt(3)/2)+padding;
+    var container_name=container.attr("class");
+    var h_center_offset_x=central_distance*Math.sqrt(3)/2;
+    var h_center_offset_y=central_distance/2;
+    var h_center_x,h_center_y;
 
+    if(container_name.localeCompare(l_big_container_name)==0){
+        h_center_x=center_x+h_center_offset_x;
+        h_center_y=center_y-h_center_offset_y;
+    }
+    else if(container_name.localeCompare(r_big_container_name)==0){
+        h_center_x=center_x-h_center_offset_x;
+        h_center_y=center_y-h_center_offset_y;
+    }
+    else{
+        console.error("hover:wrong container name");
+    }
+
+    var hover_hexagon = container.append("path")
+        .attr("d", drawPolygon(calculate_hexagon(h_center_x, h_center_y, hover_container_radius)))
+        .attr("class","hover_hexagon");
+
+}
 function zoom() {
-    var direction = d3.event.sourceEvent.deltaY > 0 ? 'down' : 'up'; ;
+    var direction = d3.event.sourceEvent.deltaY > 0 ? 'down' : 'up';
 
     console.log(direction);
+
      if(!InTransition) {
         var parent_obj = d3.select(this.parentNode);
         zoom_event_garbage_collector();
@@ -538,6 +598,8 @@ function mousedown(d) {
 
 function mouseClick(d) {
     var obj = d3.select(this);
+    var parent_obj = d3.select(this.parentNode);
+
     var element_index=obj.attr("floor")*6+obj.attr("index");
 
     if (!InTransition) {
@@ -546,7 +608,12 @@ function mouseClick(d) {
             obj.transition().attr("fill", "red");
             obj.call(d3.zoom()
                 .on("zoom", zoom));
+
             obj.on("dblclick.zoom", null);
+
+            parent_obj.selectAll(".hover_hexagon").remove();
+            parent_obj.selectAll(".small_selection_ball").attr("fill",point_selection_color);
+
 
 
             handle_graph(element_index);
@@ -558,6 +625,7 @@ function mouseClick(d) {
             obj.on('.zoom', null);
 
             remove_line(element_index);
+            obj.dispatch("mouseover");
         }
 
     }
@@ -567,18 +635,54 @@ function mouseup() {
 
 }
 function mouseover(d,i) {
+
+    var obj = d3.select(this);
+    var parent_obj = d3.select(this.parentNode);
+
+
+
     if (!InTransition) {
+        //common event for already selected and hovered / not selected and hovered element
+        obj.classed("selected", true);
 
-        var obj = d3.select(this);
-        var parent_obj = d3.select(this.parentNode);
+        var startPoint = pathStartPoint(obj.node());
 
-        var obj_c_x = obj.attr("cx");
-        var obj_c_y = obj.attr("cy");
+
+        var circle = parent_obj.append("circle")
+            .attr("cx", startPoint.x)
+            .attr("cy", startPoint.y)
+            .attr("r", hover_point_radius)
+            .attr("stroke", "red")
+            .attr("stroke-dasharray", "20,5")
+            .classed("small_selection_ball", true);
+
+        if (!obj.classed("clicked")) {//hovering not selected element
+
+            var obj_c_x = parseFloat(obj.attr("cx"));
+            var obj_c_y = parseFloat(obj.attr("cy"));
+            circle.attr("fill", point_hover_color);
+            obj.attr("fill", "rgba(255,0,0,0.4)");
+
+
+            create_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
+
+        }
+        else{//hovering already selected element
+            circle.attr("fill", point_selection_color);
+
+        }
+
+        transition(circle,obj,startPoint);
+
+
+
+
+
 
         //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
         //var yPosition = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
 
-        var index = d3.select(this).attr("index")
+        /*var index = d3.select(this).attr("index")
         var rank = (index ? parseInt(index, 10) + 1 : 0)
         var platform = d3.select(this).attr("container")
         
@@ -600,41 +704,25 @@ function mouseover(d,i) {
             .select("#players")
             .text(players);
 
-        d3.select("#tooltip").classed("hidden", false);
-
-        var startPoint = pathStartPoint(obj.node());
-
-        console.log(startPoint);
-
-        var circle = parent_obj.append("circle")
-            .attr("cx", startPoint.x)
-            .attr("cy", startPoint.y)
-            .attr("r", 2)
-            .attr("fill", "blue")
-            .attr("stroke", "red")
-            .attr("stroke-dasharray", "20,5")
-            .classed("small_selection_ball", true);
+        d3.select("#tooltip").classed("hidden", false);*/
 
 
-        obj.classed("selected", true);
 
-        //var circle = d3.select(this.parentNode).select('circle');
-
-        //transition(circle,obj,startPoint);
-
-
-        obj.attr("fill", "rgba(255,0,0,0.4)")
         //obj.attr("fill", "url(assets/placeholder.png)")
 
     }
 }
 function mouseout() {
+
+    var parent_obj = d3.select(this.parentNode);
+
     if (!InTransition) {
 
         canvas.selectAll(".small_selection_ball").remove();
         if(!d3.select(this).classed("clicked"))
             d3.select(this).attr("fill", "black");
         d3.select("#tooltip").classed("hidden", true);
+        parent_obj.selectAll(".hover_hexagon").remove();
 
     }
 }
@@ -645,7 +733,7 @@ function transition(trans_obj,path,startpoint) {
         return;
 
     trans_obj.transition()
-        .duration(5000)
+        .duration(point_transition_time)
         .attrTween("transform", translateAlong(path.node(),startpoint))
         .on("end",function () {
                 transition(trans_obj,path,startpoint);
@@ -655,17 +743,14 @@ function transition(trans_obj,path,startpoint) {
 function translateAlong(path,startpoint) {
 
     var l = path.getTotalLength();
-    var test_p=path.getPointAtLength(l);
-    var offset_x=Math.abs(startpoint.x-test_p.x);
-    var offset_y=Math.abs(startpoint.y-test_p.y);
-    console.log(offset_x,offset_y);
+
     return function(i) {
         return function(t) {
             var p = path.getPointAtLength(t * l);
-            console.log(p.x+" "+p.y);
-            var centerx=p.x;
-            var centery=p.y;
-            return "translate(" + centerx+offset_x + "," + centery+offset_x + ")";//Move marker
+            var real_x=p.x-startpoint.x;
+            var real_y=p.y-startpoint.y;
+
+            return "translate(" + real_x + "," + real_y + ")";//Move marker
         }
     }
 

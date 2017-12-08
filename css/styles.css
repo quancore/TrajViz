@@ -30,13 +30,16 @@ svg {
 }
 .small_hexagon{
     position: relative;
-z-index: 2;
+    z-index: 2;
 
 }.hexagon {
      fill: white;
      pointer-events: all;
  }
-
+.hover_hexagon {
+    fill: green;
+    pointer-events: all;
+}
 .hexagon path {
     -webkit-transition: fill 250ms linear;
     transition: fill 250ms linear;
