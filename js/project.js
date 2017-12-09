@@ -5,12 +5,9 @@ var canvas;//most outer container
 
 var w = 1200, h = 550;//most outer container size
 
-var g_w=450,g_h=250;//line graph w and h
-var graph_x_position_offset=10;
-var g_x=(w/2)-g_w/2-graph_x_position_offset,g_y=0;//line graph position
-var graph_axis_distance=5;//distance between two consecutive y-axis
-var graph_y_axis_right_base_padding=4;
-var graph_margin = [60, 80, 60, 80]; // margins
+var middle_polygon_margin=10;//top and bottom padding of middle polygon containers
+var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagons margin array
+var between_hexagons=600;//distance between two big hexagons
 
 
 var s_radius=40, big_radius=220;//s_radius=radius of small hexagons, big_raidus=radius of big hexagons
@@ -20,9 +17,17 @@ var  l_center_poly_x=120,//initial polygon centers
     r_center_poly_y = 100;
 var floor_number=2;//number of floor created with hexagons (count of hexagon level)
 var padding=5;//padding between big container polygons
-var middle_polygon_margin=10;//top and bottom padding of middle polygon containers
-var big_hexagon_margin={"left":10,"right":10,"top":60,"bottom":80};//big hexagons margin array
-var between_hexagons=600;//distance between two big hexagons
+
+var g_w=450,g_h=250;//line graph w and h
+var graph_x_position_offset=10;
+var g_x=(w/2)-g_w/2-graph_x_position_offset,g_y=0;//line graph position
+var g_cut_w=between_hexagons/2-2*middle_polygon_margin,g_cut_h=h/2-middle_polygon_margin;//graph cutting plane size
+//var g_cut_padding=2;//graph cutting plane padding(t,b,r,l)
+var graph_axis_distance=5;//distance between two consecutive y-axis
+var graph_y_axis_right_base_padding=4;
+var graph_margin = [60, 80, 60, 80]; // margins
+
+
 
 var l_big_container_name="left_container";
 var r_big_container_name="rigth_container";
@@ -55,6 +60,24 @@ var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
     .y(function(d) { return d.y; })
     .curve(d3.curveCardinalClosed.tension("1"));
 
+var zoomed = d3.zoom()
+    .scaleExtent([1, 4])
+    .on("zoom", function() {
+        var graph_c=d3.selectAll(".graph_container");
+        var e = d3.event.transform;
+        graph_c.attr("transform",e);
+    });
+
+$(document).ready(function() {
+    console.log("ready");
+
+    document.getElementsByClassName( "svg-container" )[0].onwheel = function(event){
+        event.preventDefault();
+    };
+    document.getElementsByClassName( "svg-container" )[0].onmousewheel = function(event){
+        event.preventDefault();
+    };
+});
 /***********************
     Data related code
 ***********************/
@@ -143,6 +166,7 @@ function calculate_big_hexagon_centers(){
     var total_width_for_hexagons=available_area-between_hexagons;
 
     big_hexagon_margin.top=(h/2-(big_radius*Math.sqrt(3)/2));
+    console.log("big_hexagon_top:",big_hexagon_margin.top);
     big_hexagon_margin.bottom=big_hexagon_margin.top;
     l_center_poly_x=(big_radius+big_hexagon_margin.left)/2;
     r_center_poly_x=(w-(big_radius+big_hexagon_margin.right))/2;
@@ -162,7 +186,7 @@ function calculate_uppermiddle_polygons(){
         {"x":w-(b), "y":big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2)},
         {"x":w-a, "y":big_hexagon_margin.top},
         {"x":w-c, "y":middle_polygon_margin},
-        {"x":c, "y":middle_polygon_margin},
+        {"x":c, "y":middle_polygon_margin}
 
 
     ];
@@ -207,20 +231,6 @@ function init() {
 
 
 }
-$(document).ready(function() {
-    console.log("ready");
-
-    document.getElementsByClassName( "svg-container" )[0].onwheel = function(event){
-        event.preventDefault();
-    };
-    document.getElementsByClassName( "svg-container" )[0].onmousewheel = function(event){
-        event.preventDefault();
-    };
-});
-
-
-
-
 
 function polygons() {
 
@@ -325,32 +335,6 @@ function polygons() {
 
 
 }
-var zoomed = d3.zoom()
-// only scale up, e.g. between 1x and 50x
-    .scaleExtent([1, 4])
-    .on("zoom", function() {
-        var graph_c=d3.selectAll(".graph_container");
-
-        // the "zoom" event populates d3.event with an object that has
-        // a "translate" property (a 2-element Array in the form [x, y])
-        // and a numeric "scale" property
-        var e = d3.event;
-        console.log(e);
-
-        // now, constrain the x and y components of the translation by the
-            // dimensions of the viewport
-           var tx = Math.min(0, Math.max(e.transform.translate[0], g_w - g_w * e.scale)),
-            ty = Math.min(0, Math.max(e.transform.translate[1], g_h - g_h * e.scale));
-        // then, update the zoom behavior's internal translation, so that
-        // it knows how to properly manipulate it on the next movement
-        //zoomed.translate([tx, ty]);
-        // and finally, update the <g> element's transform attribute with the
-        // correct translation and scale (in reverse order)
-        graph_c.attr("transform", [
-            "translate(" + [tx, ty] + ")",
-            "scale(" + e.scale + ")"
-        ].join(" "));
-    });
 
 function remove_line(element_index) {//remove element from line graph
     var graph=d3.selectAll(".graph");
@@ -363,8 +347,11 @@ function remove_line(element_index) {//remove element from line graph
     line_count--;
 
     if(line_count<=0){
-        d3.selectAll(".graph_container").remove();
+        d3.selectAll(".clipping_plane").remove();
+        d3.selectAll("defs").remove();
+
     }
+
     else
         graph.attr("line_count",line_count);
 
@@ -421,9 +408,34 @@ function handle_graph(element_index)
 
     if(graph.empty()==true){
 
-        console.log("empty");
+        /*var clipper = graph_container
+            .append('defs')
+            .append('clipPath')
+            .attr('id', 'clip')
+            .append('rect')
+            .attr("id", "clip-rect")
+            .attr('x', big_radius/2-middle_polygon_margin-g_cut_padding)
+            .attr('y', middle_polygon_margin)
+            .attr('width', g_cut_w-g_cut_padding)
+            .attr('height', g_cut_h-g_cut_padding);*/
 
-        graph = graph_container.append("g")
+        var clipper = graph_container
+            .append('defs')
+            .append('clipPath')
+            .attr('id', 'clip')
+            .append("path")
+            .attr("d", drawPolygon(calculate_uppermiddle_polygons()));
+
+
+
+
+        var clipped_area = graph_container
+            .append('g')
+            .attr('class', 'clipping_plane')
+            .attr('clip-path', 'url(#clip)');
+
+
+        graph = clipped_area.append("g")
             .attr("class","graph_container")
             .append("svg")
             .attr("width", w + graph_margin[1] + graph_margin[3])
@@ -433,9 +445,14 @@ function handle_graph(element_index)
             .attr("transform", "translate(" + g_x + "," + g_y + ")");
 
 
+
         graph.append("g")
             .attr("transform", "translate(" + graph_margin[3] + "," + graph_margin[0] + ")")
             .attr("class","graph_area");
+
+
+
+
 
 
         line_count=1;
@@ -472,12 +489,6 @@ function handle_graph(element_index)
 
     return line_id;
 }
-/*
-function zoomed() {
-    console.log("zoomed");
-    var graph_c=d3.selectAll(".graph_container");
-    graph_c.attr("transform", d3.event.transform);
-}*/
 
 function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creator,has_x_axis_exist,transition_of_x,transition_of_y,element_index) {
 
