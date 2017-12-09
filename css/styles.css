@@ -75,7 +75,7 @@ svg {
 
 .data2 {
     fill: none;
-    stroke: orange;
+    stroke: green;
 }
 .data3 {
     fill: none;
@@ -107,7 +107,7 @@ svg {
 }
 .y.axis2 line, .y.axis2 path, .y.axis2 text{
     fill: none;
-    stroke: orange;
+    stroke: green;
 }
 .y.axis3 line, .y.axis3 path, .y.axis3 text{
     fill: none;
@@ -115,6 +115,24 @@ svg {
 }
 .y.axis text {
     font-size: 14;
+}
+.small_selection_ball{
+
+    stroke:magenta;
+    stroke-width:2;
+    stroke-dasharray:20.5;
+}
+#point_of_line1{
+    fill: red;
+
+}
+#point_of_line2{
+    fill: green;
+
+}
+#point_of_line3{
+    fill: blue;
+
 }
 #tooltip {
     position: absolute;
