@@ -30,13 +30,16 @@ svg {
 }
 .small_hexagon{
     position: relative;
-z-index: 2;
+    z-index: 2;
 
 }.hexagon {
      fill: white;
      pointer-events: all;
  }
-
+.hover_hexagon {
+    fill: green;
+    pointer-events: all;
+}
 .hexagon path {
     -webkit-transition: fill 250ms linear;
     transition: fill 250ms linear;
@@ -72,7 +75,7 @@ z-index: 2;
 
 .data2 {
     fill: none;
-    stroke: orange;
+    stroke: green;
 }
 .data3 {
     fill: none;
@@ -104,7 +107,7 @@ z-index: 2;
 }
 .y.axis2 line, .y.axis2 path, .y.axis2 text{
     fill: none;
-    stroke: orange;
+    stroke: green;
 }
 .y.axis3 line, .y.axis3 path, .y.axis3 text{
     fill: none;
@@ -112,6 +115,24 @@ z-index: 2;
 }
 .y.axis text {
     font-size: 14;
+}
+.small_selection_ball{
+
+    stroke:magenta;
+    stroke-width:2;
+    stroke-dasharray:20.5;
+}
+#point_of_line1{
+    fill: red;
+
+}
+#point_of_line2{
+    fill: green;
+
+}
+#point_of_line3{
+    fill: blue;
+
 }
 #tooltip {
     position: absolute;
