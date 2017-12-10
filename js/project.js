@@ -52,8 +52,11 @@ var remaining=element_number%6;*/
 
 var InTransition=false;//transition parameter.use for disable mouse event during zoom event
 
-var data1 = [3, 6, 2, 7, 5, 2, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
-var data2 = [543, 367, 215, 56, 65, 62, 87, 156, 287, 398, 523, 685, 652, 674, 639, 619, 589, 558, 605, 574, 564, 496, 525, 476, 432, 458, 421, 387, 375, 368];
+var data1 = [3, 6, 4, 7, 5, 7, 0, 3, 8, 9, 2, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
+var data2 = [4, 9, 8, 7, 9, 2, 8, 6, 8, 9, 9, 5, 9, 3, 6, 3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 9, 2, 7];
+var data3 = [8, 6, 2, 7, 5, 4, 0, 3, 6, 9, 2, 5, 10, 3, 6, 3, 6, 2, 7, 5, 2, 4, 3, 8, 9, 2, 5, 7, 9, 7];
+
+var x1_s,y1_s,x2_s,y2_s,x3_s,y3_s;//data scalers
 
 var drawPolygon = d3.line()//general purpose polygon,hexagon drawer
     .x(function(d) { return d.x; })
@@ -67,6 +70,9 @@ var zoomed = d3.zoom()
         var e = d3.event.transform;
         graph_c.attr("transform",e);
     });
+
+//TODO update this line with real data like=> bisectDate = d3.bisector(function(d) { return d.year; }).left;
+var bisectDate = d3.bisector(function(d,i) { return d; }).left;
 
 $(document).ready(function() {
     console.log("ready");
@@ -191,6 +197,80 @@ function calculate_uppermiddle_polygons(){
 
     ];
 }
+//TODO("modify with real data");
+function select_data_array(arr_index) {//return data array via index ={1,2,3}
+    if(arr_index==1)
+        return data1;
+    else if(arr_index==2)
+        return data2;
+    else if(arr_index==3)
+        return data3;
+    return -1;
+
+}
+function get_data_scalers(arr_index) {//return scalers (x,y) related to the array via index ={1,2,3}
+
+    console.log("select_data_scalers:",arr_index);
+
+
+    if(arr_index==1) {
+        return [x1_s,y1_s];
+    }
+    else if(arr_index==2) {
+        return [x2_s,y2_s];
+
+    }
+    else {
+        return [x3_s,y3_s];
+
+    }
+
+}
+function set_data_scalers(arr_index,x_s,y_s) {//return scalers (x,y) related to the array via index ={1,2,3}
+
+    console.log("select_data_scalers:",arr_index);
+
+
+    if(arr_index==1) {
+        x1_s=x_s;y1_s=y_s;
+    }
+    else if(arr_index==2) {
+        x2_s=x_s;y2_s=y_s;
+
+    }
+    else {
+        x3_s=x_s;y3_s=y_s;
+
+    }
+
+}
+
+function get_domain_range(arr) {// return domain (lower,upper) and range (lower,upper)
+    var w = g_w - graph_margin[1] - graph_margin[3];	// width
+    var h = g_h - graph_margin[0] - graph_margin[2]; // height
+
+    return domain_range=[
+            {"lower_b":0,"upper_b":arr.length},//x domain
+            {"lower_b":0,"upper_b":w},//x range
+            {"lower_b":0,"upper_b":Math.max.apply(Math, arr)},//y domain
+            {"lower_b":h,"upper_b":0}];//y range
+}
+
+function initialize_scalers(arr_index) {//initialize scalers(x,y) by given index={1,2,3}
+        var domain_range=get_domain_range(select_data_array(arr_index));
+
+    var x_s = d3.scaleLinear().domain([domain_range[0].lower_b, domain_range[0].upper_b]).range([domain_range[1].lower_b, domain_range[1].upper_b]);
+        // Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
+    var y_s = d3.scaleLinear().domain([domain_range[2].lower_b, domain_range[2].upper_b]).range([domain_range[3].lower_b, domain_range[3].upper_b]);
+    set_data_scalers(arr_index,x_s,y_s);
+
+    console.log("initialize:",x1_s,y1_s);
+
+        return [x_s,y_s];
+
+}
+
+
 
 function calculate_lowermiddle_polygons(){
 
@@ -339,10 +419,14 @@ function polygons() {
 function remove_line(element_index) {//remove element from line graph
     var graph=d3.selectAll(".graph");
     var line_count=parseInt(graph.attr("line_count"));
+    var focus=graph.select(".focus");
+    var line= d3.selectAll('path[element_index="' + (element_index) + '"]');
+    var line_id=get_line_id(line.attr("class"));
 
-    d3.selectAll('path[element_index="' + (element_index) + '"]').remove();
+    line.remove();
     d3.selectAll('g[element_index="' + (element_index) + '"]').remove();
-    console.log("remove lement index: "+element_index);
+    console.log(line_id);
+    focus.select(".circle"+line_id).remove();
 
     line_count--;
 
@@ -356,7 +440,8 @@ function remove_line(element_index) {//remove element from line graph
         graph.attr("line_count",line_count);
 
 }
-function get_empty_line_place() {
+
+function get_empty_line_place() {// get the first element of missing line ids
 
     var line_number_values=new Array(3).fill(4);//fill 4 because bigger than 3
     var reference_arr=[1,2,3];
@@ -364,13 +449,9 @@ function get_empty_line_place() {
 
 
     d3.selectAll("path#graph_line").each(function (d, i) {
-        console.log("found lines");
             var obj=d3.select(this);
             var line_number_string=obj.attr("class");
-            var numberPattern = /\d+/g;
-            var line_number = line_number_string.match( numberPattern );
-            console.log("founded lines: "+line_number);
-            line_number_values[curr_index]=line_number;
+            line_number_values[curr_index]=get_line_id(line_number_string);
             curr_index++;
 
         });
@@ -382,6 +463,27 @@ function get_empty_line_place() {
             return reference_arr[r];
         }
     return -1;
+
+}
+function get_line_id(class_str){
+
+    var numberPattern = /\d+/g;
+    var line_number = class_str.match( numberPattern );
+    return parseInt(line_number);
+}
+
+function get_available_line_ids() {// get sorted list of available line ids
+
+    var available_ids=[];
+
+    d3.selectAll("path#graph_line").each(function (d, i) {
+        var obj=d3.select(this);
+        var line_number_string=obj.attr("class");
+        available_ids.push((get_line_id(line_number_string)));
+
+    });
+
+    return available_ids = available_ids.sort(function (a, b) {  return a - b;  });
 
 }
 function handle_graph(element_index)
@@ -408,7 +510,7 @@ function handle_graph(element_index)
 
     if(graph.empty()==true){
 
-        /*var clipper = graph_container
+        /*var clipper = graph_container//rectangle clipper
             .append('defs')
             .append('clipPath')
             .attr('id', 'clip')
@@ -465,14 +567,19 @@ function handle_graph(element_index)
     }
 
     //handle data here
-    var x_domain={"lower_b":0,"upper_b":data1.length},
+    /*var x_domain={"lower_b":0,"upper_b":data1.length},
         x_range={"lower_b":0,"upper_b":w},
         y_domain={"lower_b":0,"upper_b":Math.max.apply(Math, data1)},
         y_range={"lower_b":h,"upper_b":0};
 
     var x = d3.scaleLinear().domain([x_domain.lower_b, x_domain.upper_b]).range([x_range.lower_b, x_range.upper_b]);
     // Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
-    var y = d3.scaleLinear().domain([y_domain.lower_b, y_domain.upper_b]).range([y_range.lower_b, y_range.upper_b]);
+    var y = d3.scaleLinear().domain([y_domain.lower_b, y_domain.upper_b]).range([y_range.lower_b, y_range.upper_b]);*/
+
+    //TODO do not forget to set data element related to line_id (1=data1,2=data2, 3=data3) before getting scalers (x,y)
+    var scalers=initialize_scalers(line_id);
+    var x=scalers[0],y=scalers[1];
+
 
     var line1 = d3.line()
         .x(function(d,i) {
@@ -490,19 +597,47 @@ function handle_graph(element_index)
     return line_id;
 }
 
+
 function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creator,has_x_axis_exist,transition_of_x,transition_of_y,element_index) {
 
     var yAxis = d3.axisLeft().scale(y_scalar).ticks(4);
     var graph_area=graph.select(".graph_area");
+    var focus=graph_area.select(".focus");
+
 
     if(!has_x_axis_exist) {
         var xAxis = d3.axisBottom().scale(x_scalar).tickSize(-h);
+
 
         // Add the x-axis.
         graph_area.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + transition_of_x + ")")
             .call(xAxis);
+
+       graph_area
+            .on("mouseover", function() { focus.style("display", null); })
+            .on("mouseout", function() { focus.style("display", "none"); })
+            .on("mousemove", update_data_points_graph);
+
+    }
+
+    if(focus.empty()!=true){
+        console.log(focus);
+
+        focus.append("circle")
+            .attr("r", 7.5)
+            .attr("class","circle"+line_id);
+    }
+    else {
+        console.log("init focus");
+        focus = graph_area.append("g")
+            .attr("class", "focus")
+            .style("display", "none");
+
+        focus.append("circle")
+            .attr("r", 7.5)
+            .attr("class","circle"+line_id);
     }
 
         graph_area.append("g")
@@ -526,7 +661,7 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
     // add lines
     // do this AFTER the axes above so that the line is above the tick-lines
     graph_area.append("path")
-        .attr("d", line_creator(data))
+        .attr("d", line_creator(select_data_array(line_id)))
         .attr("id","graph_line")
         .attr("class", "data"+line_id)
         .attr("element_index",element_index);
@@ -535,7 +670,37 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
 
 
 }
+//TODO modify here with real data
+function update_data_points_graph() {
 
+    var available_elements=get_available_line_ids();
+    var focus=d3.select(".focus");
+
+    for(var i=0;i<available_elements.length;i++){
+        var scalers=get_data_scalers(available_elements[i]);
+        var x0 = scalers[0].invert(d3.mouse(this)[0]);
+
+
+
+        var curr_data_arr=select_data_array(available_elements[i]);
+        console.log(curr_data_arr);
+
+        var bisection_index = Math.ceil(x0);// d3 bisection has to use for sorted date =>bisectDate(curr_data_arr, x0,1)
+        console.log(bisection_index);
+        var d0 = bisection_index - 1,
+            d1 = bisection_index,
+            d = x0 - d0 > d1 - x0 ? d1 : d0;//d is y value of nearest data point to mouse position
+        var circle=focus.select(".circle"+available_elements[i]);
+        circle.attr("transform", "translate(" + scalers[0](d) + "," + scalers[1](curr_data_arr[d]) + ")");
+        available_elements=get_available_line_ids();
+
+
+        //focus.attr("transform", "translate(" + x(d.year) + "," + y(d.value) + ")");
+        //focus.select("text").text(function() { return d.value; });
+        //focus.select(".x-hover-line").attr("y2", height - y(d.value));
+        //focus.select(".y-hover-line").attr("x2", width + width);
+    }
+}
 /*
 function handle_scroll_event(parent_obj,unit_coefficient) {
     var elements;

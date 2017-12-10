@@ -159,3 +159,25 @@ svg {
     font-size: 16px;
     line-height: 20px;
 }
+
+.hover-line {
+    stroke: #6F257F;
+    stroke-width: 2px;
+    stroke-dasharray: 3,3;
+}
+
+.focus .circle1 {
+    fill: #F1F3F3;
+    stroke: red;
+    stroke-width: 5px;
+}
+.focus .circle2 {
+    fill: #F1F3F3;
+    stroke: green;
+    stroke-width: 5px;
+}
+.focus .circle3 {
+    fill: #F1F3F3;
+    stroke: blue;
+    stroke-width: 5px;
+}
