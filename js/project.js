@@ -26,13 +26,15 @@ var g_cut_w=between_hexagons/2-2*middle_polygon_margin,g_cut_h=h/2-middle_polygo
 var graph_axis_distance=5;//distance between two consecutive y-axis
 var graph_y_axis_right_base_padding=4;
 var graph_margin = [60, 80, 60, 80]; // margins
-
+var graph_hover_circle_radius=7.5;
 
 
 var l_big_container_name="left_container";
 var r_big_container_name="rigth_container";
 var u_big_container_name="upper_container";
 var lo_big_container_name="lower_container";
+var ur_big_subcontainer_name="upper_right_subcontainer";
+
 
 var r_container_name="steam";
 var l_container_name="twitch";
@@ -42,6 +44,9 @@ var hover_container_radius=100;//hover hexagon radius
 var point_transition_time=1000;//hover point transition time
 var hover_point_radius=4;// hover point radius
 var point_hover_color="yellow";
+
+var text_area_inner_margin=12;
+var text_graph_hover_circle_radius=5;
 
 
 /* For star shape creation
@@ -72,7 +77,7 @@ var zoomed = d3.zoom()
     });
 
 //TODO update this line with real data like=> bisectDate = d3.bisector(function(d) { return d.year; }).left;
-var bisectDate = d3.bisector(function(d,i) { return d; }).left;
+//var bisectDate = d3.bisector(function(d,i) { return d; }).left;
 
 $(document).ready(function() {
     console.log("ready");
@@ -197,7 +202,39 @@ function calculate_uppermiddle_polygons(){
 
     ];
 }
-//TODO("modify with real data");
+function calculate_lowermiddle_polygons(){
+
+    var a=big_hexagon_margin.left+(3/2)*big_radius+middle_polygon_margin;
+    var b=big_hexagon_margin.left+2*big_radius+middle_polygon_margin;
+    var c=a+(big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3);
+
+    return  upper_polygon_points=[
+
+        {"x":a, "y":h-big_hexagon_margin.top},
+        {"x":b, "y":h-(big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2))},
+        {"x":w-(b), "y":h-(big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2))},
+        {"x":w-a, "y":h-big_hexagon_margin.top},
+        {"x":w-c, "y":h-middle_polygon_margin},
+        {"x":c, "y":h-middle_polygon_margin}];
+}
+
+function calculate_upper_right_subpolygons(){
+    var a=big_hexagon_margin.right+(3/2)*big_radius;
+    var b=big_hexagon_margin.right+2*big_radius+middle_polygon_margin;
+    var c=a+(big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3);
+
+    return  upper_polygon_points=[
+
+        {"x":w-big_hexagon_margin.right-big_radius/2, "y":big_hexagon_margin.top},
+        {"x":w-a, "y":big_hexagon_margin.top},
+        {"x":w-(c), "y":middle_polygon_margin},
+        {"x":w-big_hexagon_margin.right-big_radius/4, "y":middle_polygon_margin}
+
+    ];
+}
+
+
+//TODO modify with real data;
 function select_data_array(arr_index) {//return data array via index ={1,2,3}
     if(arr_index==1)
         return data1;
@@ -270,23 +307,6 @@ function initialize_scalers(arr_index) {//initialize scalers(x,y) by given index
 
 }
 
-
-
-function calculate_lowermiddle_polygons(){
-
-    var a=big_hexagon_margin.left+(3/2)*big_radius+middle_polygon_margin;
-    var b=big_hexagon_margin.left+2*big_radius+middle_polygon_margin;
-    var c=a+(big_hexagon_margin.top-middle_polygon_margin)/Math.sqrt(3);
-
-    return  upper_polygon_points=[
-
-        {"x":a, "y":h-big_hexagon_margin.top},
-        {"x":b, "y":h-(big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2))},
-        {"x":w-(b), "y":h-(big_hexagon_margin.top+(big_radius)*(Math.sqrt(3)/2))},
-        {"x":w-a, "y":h-big_hexagon_margin.top},
-        {"x":w-c, "y":h-middle_polygon_margin},
-        {"x":c, "y":h-middle_polygon_margin}];
-}
 function init() {
 
         calculate_big_hexagon_centers();
@@ -316,6 +336,8 @@ function polygons() {
 
 
         //var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
+    var upper_right_subcontainer = canvas.append("g")
+        .attr("class",ur_big_subcontainer_name);
 
     var upper_container = canvas.append("g")
         .attr("class",u_big_container_name);
@@ -326,13 +348,25 @@ function polygons() {
 
     var left_container = canvas.append("g")
         .attr("transform", "translate(" + l_center_poly_x + "," +l_center_poly_y + ")")
-        .attr("class",l_big_container_name);
+        .attr("class",l_big_container_name)
+        .attr("segment_number",1);//we are in the first segment (game types:fps,mmo etc).
+
 
 
     var right_container = canvas.append("g")
         .attr("transform", "translate(" + r_center_poly_x + "," +r_center_poly_y + ")")
-        .attr("class",r_big_container_name);
+        .attr("class",r_big_container_name)
+        .attr("segment_number",1);
 
+
+
+    var upper_right_subpolygons = upper_right_subcontainer.append("path")
+        .attr("d", drawPolygon(calculate_upper_right_subpolygons()))
+        .attr("stroke", "red")
+        .attr("stroke-dasharray","20,5")
+        .attr("stroke-width", 3)
+        .attr("fill", "rgba(255,0,0,0.4)")
+        .classed("upper_right_subpolygons", true);
 
     var left_hexagon = left_container.append("path")
             .attr("d", drawPolygon(calculate_hexagon(l_center_poly_x,l_center_poly_y,big_radius)))
@@ -366,6 +400,9 @@ function polygons() {
         .attr("stroke-width", 3)
         .attr("fill", "rgba(255,0,0,0.4)")
         .classed("lower_middle_hexagon", true);
+
+
+
 
 
 
@@ -408,8 +445,8 @@ function polygons() {
 
 
 
-    var left_base_index=hexagon_creation_by_angle(right_container,0,r_container_name,s_radius,r_center_poly_x,r_center_poly_y,padding,2);//base index is the starting index of container
-    hexagon_creation_by_angle(left_container,left_base_index,l_container_name,s_radius,l_center_poly_x,l_center_poly_y,padding,2);
+    var left_base_index=hexagon_creation_by_angle(right_container,0,r_container_name,s_radius,r_center_poly_x,r_center_poly_y,padding,18);//base index is the starting index of container
+    hexagon_creation_by_angle(left_container,left_base_index,l_container_name,s_radius,l_center_poly_x,l_center_poly_y,padding,18);
 
     //create_hexagon_shape(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,element_number);
 
@@ -423,16 +460,28 @@ function remove_line(element_index) {//remove element from line graph
     var line= d3.selectAll('path[element_index="' + (element_index) + '"]');
     var line_id=get_line_id(line.attr("class"));
 
+    var rigth_upper_subcontainer=d3.select("."+ur_big_subcontainer_name);
+    var text_area=rigth_upper_subcontainer.select(".text_area");
+    var text_group=text_area.select(".text_group"+line_id);
+
+
+
     line.remove();
     d3.selectAll('g[element_index="' + (element_index) + '"]').remove();
     console.log(line_id);
     focus.select(".circle"+line_id).remove();
+    text_group.remove();
+
 
     line_count--;
 
-    if(line_count<=0){
+    if(line_count<=0){//graph will be deleted
+
         d3.selectAll(".clipping_plane").remove();
         d3.selectAll("defs").remove();
+        text_area.remove();
+        rigth_upper_subcontainer.selectAll(".upper_right_transparency_polygon").remove();
+
 
     }
 
@@ -494,6 +543,8 @@ function handle_graph(element_index)
 
     var graph=d3.selectAll(".graph");
     var graph_container=d3.selectAll(".upper_container");
+    var rigth_upper_subcontainer=d3.select("."+ur_big_subcontainer_name);
+
 
     var line_count,line_id;//keep count of how many line appended currently
 
@@ -544,17 +595,28 @@ function handle_graph(element_index)
             .attr("height", h + graph_margin[0] + graph_margin[2])
             .attr("line_count",1)
             .attr("class","graph")
-            .attr("transform", "translate(" + g_x + "," + g_y + ")");
+            .attr("transform", "translate(" + g_x + "," + g_y + ")")
+            .on("mouseover", function() {
+                rigth_upper_subcontainer.selectAll(".upper_right_transparency_polygon").remove();
+            })
+            .on("mouseout", function() {
+                if(rigth_upper_subcontainer.selectAll(".upper_right_transparency_polygon").empty()==true) {
+                    rigth_upper_subcontainer.append("path")
+                        .attr("d", drawPolygon(calculate_upper_right_subpolygons()))
+                        .attr("stroke", "red")
+                        .attr("stroke-dasharray", "20,5")
+                        .attr("stroke-width", 3)
+                        .attr("fill", "rgba(255,0,0,0.2)")
+                        .classed("upper_right_transparency_polygon", true);
+                }
+                update_text_element(rigth_upper_subcontainer,"-");
+            });
 
 
 
         graph.append("g")
             .attr("transform", "translate(" + graph_margin[3] + "," + graph_margin[0] + ")")
             .attr("class","graph_area");
-
-
-
-
 
 
         line_count=1;
@@ -603,7 +665,8 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
     var yAxis = d3.axisLeft().scale(y_scalar).ticks(4);
     var graph_area=graph.select(".graph_area");
     var focus=graph_area.select(".focus");
-
+    var rigth_upper_subcontainer=d3.select("."+ur_big_subcontainer_name);
+    var rect=rigth_upper_subcontainer.select(".text_area");
 
     if(!has_x_axis_exist) {
         var xAxis = d3.axisBottom().scale(x_scalar).tickSize(-h);
@@ -616,29 +679,76 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
             .call(xAxis);
 
        graph_area
-            .on("mouseover", function() { focus.style("display", null); })
-            .on("mouseout", function() { focus.style("display", "none"); })
+            .on("mouseover", function() {
+                focus.style("display", null);
+            })
+            .on("mouseout", function() {
+                focus.style("display", "none");
+            })
             .on("mousemove", update_data_points_graph);
 
-    }
 
-    if(focus.empty()!=true){
-        console.log(focus);
 
-        focus.append("circle")
-            .attr("r", 7.5)
-            .attr("class","circle"+line_id);
-    }
-    else {
-        console.log("init focus");
-        focus = graph_area.append("g")
+       focus = graph_area.append("g")
             .attr("class", "focus")
             .style("display", "none");
 
         focus.append("circle")
-            .attr("r", 7.5)
-            .attr("class","circle"+line_id);
+            .attr("r", graph_hover_circle_radius)
+            .attr("class","circleX");
+
+
+        rect=rigth_upper_subcontainer.append("g")
+            .attr("class","text_area")
+            .attr("transform", "translate("+(w-(big_hexagon_margin.right+(3/2)*big_radius)+text_area_inner_margin)+","+(middle_polygon_margin+text_area_inner_margin)+")");
+
+        var text_groupX=rect.append("g")
+            .attr("class","text_groupX");
+
+        var textX=text_groupX.append("text")
+            .attr("x", 2*text_graph_hover_circle_radius)
+            .attr("y",0)
+            .text("-");
+
+        textX.attr("y",(textX.node().getBBox().height)/4);
+
+
+        text_groupX.append("circle")
+            .attr("r", text_graph_hover_circle_radius);
+
+        rigth_upper_subcontainer.append("path")
+            .attr("d", drawPolygon(calculate_upper_right_subpolygons()))
+            .attr("stroke", "red")
+            .attr("stroke-dasharray", "20,5")
+            .attr("stroke-width", 3)
+            .attr("fill", "rgba(255,0,0,0.2)")
+            .classed("upper_right_transparency_polygon", true);
+
     }
+    else{
+
+
+    }
+
+    focus.append("circle")
+        .attr("r", graph_hover_circle_radius)
+        .attr("class","circle"+line_id);
+
+    var text_group=rect.append("g")
+        .attr("class","text_group"+line_id);
+
+    var text=text_group.append("text")
+        .attr("x", 2*text_graph_hover_circle_radius)
+        .attr("y",0)
+        .text("-");
+
+    text_group.append("circle")
+        .attr("r", text_graph_hover_circle_radius);
+
+
+
+    text.attr("y",(text.node().getBBox().height)/4);
+    text_group.attr("transform", "translate(0,"+((text.node().getBBox().height)*line_id)+")");
 
         graph_area.append("g")
             .attr("class", "y axis axis"+line_id)
@@ -670,11 +780,17 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
 
 
 }
+//TODO may need editing for real data
+function update_text_element(parent_obj,text) {
+    parent_obj.selectAll("text").text(text);
+}
 //TODO modify here with real data
 function update_data_points_graph() {
 
     var available_elements=get_available_line_ids();
     var focus=d3.select(".focus");
+    var text_area=d3.select(".text_area");
+
 
     for(var i=0;i<available_elements.length;i++){
         var scalers=get_data_scalers(available_elements[i]);
@@ -687,12 +803,24 @@ function update_data_points_graph() {
 
         var bisection_index = Math.ceil(x0);// d3 bisection has to use for sorted date =>bisectDate(curr_data_arr, x0,1)
         console.log(bisection_index);
-        var d0 = bisection_index - 1,
-            d1 = bisection_index,
-            d = x0 - d0 > d1 - x0 ? d1 : d0;//d is y value of nearest data point to mouse position
-        var circle=focus.select(".circle"+available_elements[i]);
-        circle.attr("transform", "translate(" + scalers[0](d) + "," + scalers[1](curr_data_arr[d]) + ")");
-        available_elements=get_available_line_ids();
+        if(bisection_index>0) {//sometimes it gives negaive val.
+            var d0 = bisection_index - 1,
+                d1 = bisection_index,
+                d = x0 - d0 > d1 - x0 ? d1 : d0;//d is y value of nearest data point to mouse position
+            var circle = focus.select(".circle" + available_elements[i]);
+            var circleX = focus.select(".circleX");
+
+            var text_group = text_area.select(".text_group" + available_elements[i]);
+            var text_groupX = text_area.select(".text_groupX");
+
+            update_text_element(text_group, curr_data_arr[d]);
+            update_text_element(text_groupX, d);
+
+            circle.attr("transform", "translate(" + scalers[0](d) + "," + scalers[1](curr_data_arr[d]) + ")");
+            circleX.attr("transform", "translate(" + scalers[0](d) + "," + (-20)+ ")");
+
+        }
+        //available_elements=get_available_line_ids();
 
 
         //focus.attr("transform", "translate(" + x(d.year) + "," + y(d.value) + ")");
@@ -825,13 +953,49 @@ function create_hover_hexagon(center_x,center_y,container) {
         .attr("class","hover_hexagon");
 
 }
+
+//this function can be used to get all selected elements id in this container when zoom event is happened
+//for an element that is the same container
+// (can be used to get all selected genres).return array includes zoomed obj as well.
+// TODO can be modifiy to return DOM elements
+function return_selected_ids_in_container(parent_obj){
+
+    var obj_arr=[];
+
+    parent_obj.selectAll(".clicked").each(function (d, i) {
+        var obj=d3.select(this);
+        var index=parseInt(obj.attr("index"));
+        obj_arr.push(index);
+    });
+
+    return obj_arr;
+}
 function zoom() {
+
     var direction = d3.event.sourceEvent.deltaY > 0 ? 'down' : 'up';
+    var obj = d3.select(this);//zoomed element
+    var parent_obj = d3.select(this.parentNode);//parent of it (left_container, right_container)
+    var segment_number=parseInt(parent_obj.attr("segment_number"));
+    console.log("zoom: "+segment_number);
+
+    if(segment_number==1)
+
+        if(direction=="down")//if we are in the first segment, we cannot go back
+            return;
+
+        else {//we choose some elements on the first segment lets say fps,mmo etc so we get selected element_ids and can get genres
+            var get_selected_element_ids=return_selected_ids_in_container(parent_obj);
+            console.log("selected_id: "+get_selected_element_ids);
+
+        }
+    if(segment_number==3 && direction=="up")//if we are in the last segment, we cannot go further
+        return;
+
 
     console.log(direction);
 
      if(!InTransition) {
-        var parent_obj = d3.select(this.parentNode);
+         (direction=="down")?parent_obj.attr("segment_number",--segment_number):parent_obj.attr("segment_number",++segment_number);
         zoom_event_garbage_collector();
         handle_scroll_event_updated(parent_obj, -1);
     }
@@ -840,9 +1004,9 @@ function zoom_event_garbage_collector(){//can be add any feature to remove on zo
 
 
     d3.selectAll(".clicked").each(function (d, i) {
+
         var obj = d3.select(this);
         var parent_obj = d3.select(this.parentNode);
-
         var element_index=obj.attr("index");
 
         obj.attr("fill","black");
@@ -1128,11 +1292,12 @@ function calculate_hexagon_center(neig_number,multiplier,padding,r){
 
 }*/
 
-function hexagon_creation_by_angle(container,base_index,container_name,radius,x,y,padding,floor_number){
+function hexagon_creation_by_angle(container,base_index,container_name,radius,x,y,padding,element_number){
 
     var radius_arr=[];
     var angle=[];
-    var floor_base_index=0;
+    var floor_number = (element_number>6) ? 2:1;//if element number is bigger than 6 then we will build 2 floor
+    var floor_base_index=base_index;//starting index of this container
     for (var i=0;i<floor_number;i++) {
         var distance = (radius * Math.sqrt(3) / 2) + ((i * 2 + 1) * radius* Math.sqrt(3) / 2) + ((i + 1) * padding);
         radius_arr=[];
@@ -1154,6 +1319,9 @@ function hexagon_creation_by_angle(container,base_index,container_name,radius,x,
                 var d_center_diff_x = x + Math.cos(radians) * radius_arr[l];
                 var d_center_diff_y = y + Math.sin(radians) * radius_arr[l];
                 //var center_diff = rotate(x, y, d_center_diff_x, d_center_diff_y, (angle * k));
+                var unique_index=floor_base_index+l*6+k;
+                if((unique_index-base_index)==element_number)//we reached aimed element number
+                    return unique_index;
                 var small_hexagon = container.append("path")
                     .attr("d", drawPolygon(calculate_hexagon(d_center_diff_x, d_center_diff_y, radius)))
                     .attr("stroke", "red")
@@ -1164,7 +1332,7 @@ function hexagon_creation_by_angle(container,base_index,container_name,radius,x,
                     .attr("floor", i)
                     .attr("hexagon-type", "neigbourhood")
                     .attr("container",container_name)
-                    .attr("index", floor_base_index+l*6+k+base_index)
+                    .attr("index", unique_index)
                     .on("click", mouseClick)
                     .on("mouseup", mouseup)
                     .on("mouseover", mouseover)
@@ -1177,5 +1345,5 @@ function hexagon_creation_by_angle(container,base_index,container_name,radius,x,
         floor_base_index=floor_base_index+radius_arr.length*6
 
     }
-    return floor_base_index;
+    return unique_index;
 }
