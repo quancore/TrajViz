@@ -535,6 +535,18 @@ function get_available_line_ids() {// get sorted list of available line ids
     return available_ids = available_ids.sort(function (a, b) {  return a - b;  });
 
 }
+function find_big_hexagon_orientation(obj_x,obj_y,parent) {
+    var parent_x=parseFloat(parent.attr("cx")),parent_y=parseFloat(parent.attr("cy"));
+    var obj_x=parseFloat(obj_x),obj_y=parseFloat(obj_y);
+    var orientation_multiplier_x=Math.sign(parent_x-obj_x);
+    var orientation_multiplier_y=Math.sign(parent_y-obj_y);
+
+
+    return [orientation_multiplier_x,orientation_multiplier_y];
+
+
+
+}
 function handle_graph(element_index)
 {
     var w = g_w - graph_margin[1] - graph_margin[3];	// width
@@ -931,12 +943,25 @@ function handle_elements(elements){
 }
 function create_hover_hexagon(center_x,center_y,container) {
     var central_distance=(s_radius*Math.sqrt(3)/2)+(hover_container_radius*Math.sqrt(3)/2)+padding;
-    var container_name=container.attr("class");
+    var central_hexagon=container.selectAll(".center_hexagon");
     var h_center_offset_x=central_distance*Math.sqrt(3)/2;
     var h_center_offset_y=central_distance/2;
     var h_center_x,h_center_y;
 
-    if(container_name.localeCompare(l_big_container_name)==0){
+    var orientation=find_big_hexagon_orientation(center_x,center_y,central_hexagon);
+
+    if (orientation[1]==0)
+        orientation[1]=-1;
+    if (orientation[0]==0)
+        orientation[0]=-1;
+    console.log("container: ",central_hexagon);
+    console.log(central_hexagon);
+    console.log(orientation);
+
+    h_center_x=center_x+orientation[0]*h_center_offset_x;
+    h_center_y=center_y+orientation[1]*h_center_offset_y;
+
+    /*if(container_name.localeCompare(l_big_container_name)==0){
         h_center_x=center_x+h_center_offset_x;
         h_center_y=center_y-h_center_offset_y;
     }
@@ -946,7 +971,7 @@ function create_hover_hexagon(center_x,center_y,container) {
     }
     else{
         console.error("hover:wrong container name");
-    }
+    }*/
 
     var hover_hexagon = container.append("path")
         .attr("d", drawPolygon(calculate_hexagon(h_center_x, h_center_y, hover_container_radius)))
