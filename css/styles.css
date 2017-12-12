@@ -159,3 +159,51 @@ svg {
     font-size: 16px;
     line-height: 20px;
 }
+
+.hover-line {
+    stroke: #6F257F;
+    stroke-width: 2px;
+    stroke-dasharray: 3,3;
+}
+
+.focus .circle1,.text_group1 circle {
+    fill: #F1F3F3;
+    stroke: red;
+    stroke-width: 5px;
+}
+.focus .circle2,.text_group2 circle {
+    fill: #F1F3F3;
+    stroke: green;
+    stroke-width: 5px;
+}
+.focus .circle3,.text_group3 circle {
+    fill: #F1F3F3;
+    stroke: blue;
+    stroke-width: 5px;
+}
+.focus .circleX, .text_groupX circle {
+    fill: white;
+    stroke: black;
+    stroke-width: 5px;
+}
+
+.test_area
+{
+    fill: green;
+}
+.test_area text
+{
+    font-size:100%;
+}
+.test_area .text1
+{
+    fill: red;
+}
+.test_area .text2
+ {
+     fill: red;
+ }
+.test_area .text3
+  {
+      fill: red;
+  }
