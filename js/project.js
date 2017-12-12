@@ -761,7 +761,7 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
 
 
     text.attr("y",(text.node().getBBox().height)/4);
-    text_group.attr("transform", "translate(0,"+((text.node().getBBox().height)*line_id)+")");
+    text_group.attr("transform", "translate(0,"+((text.node().getBBox().height)*line_id/1.1)+")");
 
         graph_area.append("g")
             .attr("class", "y axis axis"+line_id)
