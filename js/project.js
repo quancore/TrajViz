@@ -602,12 +602,13 @@ function handle_graph(element_index)
 
         graph = clipped_area.append("g")
             .attr("class","graph_container")
+            .append("g")//chrome wrapper
+            .attr("transform", "translate(" + g_x + "," + g_y + ")")
             .append("svg")
             .attr("width", w + graph_margin[1] + graph_margin[3])
             .attr("height", h + graph_margin[0] + graph_margin[2])
             .attr("line_count",1)
             .attr("class","graph")
-            .attr("transform", "translate(" + g_x + "," + g_y + ")")
             .on("mouseover", function() {
                 rigth_upper_subcontainer.selectAll(".upper_right_transparency_polygon").remove();
             })
