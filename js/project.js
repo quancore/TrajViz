@@ -979,7 +979,9 @@ function create_hover_hexagon(center_x,center_y,container) {
         .attr("class", "hover_hexagon")
         .attr("cx", h_center_x)
         .attr("cy", h_center_y)
-        ,attr("radius", hover_container_radius);
+        .attr("radius", hover_container_radius);
+
+    return hover_hexagon
 
 }
 
@@ -1134,17 +1136,59 @@ function mouseover(d,i) {
             obj.attr("fill", "rgba(255,0,0,0.4)");
 
 
-            create_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
-
-            var index = d3.select(this).attr("index")
-            var rank = (index ? parseInt(index, 10) + 1 : 0)
-            var platform = d3.select(this).attr("container")
+            // Get the data to fill the tooltip
+            //var index = d3.select(this).attr("index")
+            //var rank = (index ? parseInt(index, 10) + 1 : 0)
+            //var platform = d3.select(this).attr("container")
             
-            gameData = getGameDataByRank(1, 12, 2017, rank, platform)
-            title = gameData['Name']
-            players = gameData['Daily Peak']
+            //gameData = getGameDataByRank(1, 12, 2017, rank, platform)
+            //title = gameData['Name']
+            //id = gameData['ID']
+            //players = gameData['Daily Peak']
 
-            var hover_hexagon = d3.select(".hover_hexagon");
+            // Create the tooltip hexagon
+            var hover_hexagon = create_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
+
+            // Create the tooltip's content
+            var hover_hexagon_cx = hover_hexagon.attr("cx");
+            var hover_hexagon_cy = hover_hexagon.attr("cy");
+            var hover_hexagon_radius = hover_hexagon.attr("radius");
+
+            // Create tooltip's title
+            var tooltip_title_cy = hover_hexagon_cy - 0.5 * hover_hexagon_radius
+            var tooltip_title = parent_obj.append("text")
+                .attr("class", "hover_hexagon_tooltip")
+                .attr("id", "hover_hexagon_tooltip_title")
+                .attr("x", hover_hexagon_cx)
+                .attr("y", tooltip_title_cy)
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .text("TITLE");
+
+            // Create tooltip's logo
+            var tooltip_logo_ratio = 120/45
+            var tooltip_logo_width = 120
+            var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio
+            var tooltip_logo_cx = hover_hexagon_cx - tooltip_logo_width/2
+            var tooltip_logo_cy = hover_hexagon_cy - tooltip_logo_height/2
+            var tooltip_logo = parent_obj.append("image")
+                .attr("class", "hover_hexagon_tooltip")
+                .attr("id", "hover_hexagon_tooltip_logo")
+                .attr("xlink:href", "https://steamdb.info/static/camo/apps/578080/capsule_sm_120.jpg")
+                .attr("x", tooltip_logo_cx)
+                .attr("y", tooltip_logo_cy);
+
+            // Creat tooltip's rank
+            var tooltip_rank_cy = hover_hexagon_cy + 0.5 * hover_hexagon_radius
+            var tooltip_rank = parent_obj.append("text")
+                .attr("class", "hover_hexagon_tooltip")
+                .attr("id", "hover_hexagon_tooltip_rank")
+                .attr("x", hover_hexagon_cx)
+                .attr("y", tooltip_rank_cy)
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .text("#0");
+
         }
         else{//hovering already selected element
             var line_number=obj.attr("related_line_number");
@@ -1199,7 +1243,7 @@ function mouseout() {
             d3.select(this).attr("fill", "black");
         d3.select("#tooltip").classed("hidden", true);
         parent_obj.selectAll(".hover_hexagon").remove();
-
+        parent_obj.selectAll(".hover_hexagon_tooltip").remove();
     }
 }
 
