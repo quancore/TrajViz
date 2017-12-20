@@ -976,7 +976,10 @@ function create_hover_hexagon(center_x,center_y,container) {
 
     var hover_hexagon = container.append("path")
         .attr("d", drawPolygon(calculate_hexagon(h_center_x, h_center_y, hover_container_radius)))
-        .attr("class","hover_hexagon");
+        .attr("class", "hover_hexagon")
+        .attr("cx", h_center_x)
+        .attr("cy", h_center_y)
+        ,attr("radius", hover_container_radius);
 
 }
 
@@ -1110,9 +1113,6 @@ function mouseover(d,i) {
     var parent_obj = d3.select(this.parentNode);
     var element_index=obj.attr("index");
 
-
-
-
     if (!InTransition) {
         //common event for already selected and hovered / not selected and hovered element
         obj.classed("selected", true);
@@ -1136,6 +1136,15 @@ function mouseover(d,i) {
 
             create_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
 
+            var index = d3.select(this).attr("index")
+            var rank = (index ? parseInt(index, 10) + 1 : 0)
+            var platform = d3.select(this).attr("container")
+            
+            gameData = getGameDataByRank(1, 12, 2017, rank, platform)
+            title = gameData['Name']
+            players = gameData['Daily Peak']
+
+            var hover_hexagon = d3.select(".hover_hexagon");
         }
         else{//hovering already selected element
             var line_number=obj.attr("related_line_number");
@@ -1144,10 +1153,6 @@ function mouseover(d,i) {
         }
 
         transition(circle,obj,startPoint);
-
-
-
-
 
 
         //var xPosition = parseFloat(d3.select(this).attr("x")) + xScale.bandwidth() / 2;
