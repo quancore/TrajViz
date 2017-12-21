@@ -1258,9 +1258,9 @@ function simplifyText(game_title) {
 
     if (game_title.length <= max_length) {
         return game_title
-    } else if (all_upper <= max_length) {
+    } else if (all_upper.length <= max_length) {
         return all_upper
-    } else if (first_letters <= max_length) {
+    } else if (first_letters.length <= max_length) {
         return first_letters
     }
     return game_title.substring(0, max_length-4) + "..."
