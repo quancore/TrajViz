@@ -92,7 +92,7 @@ $(document).ready(function() {
 /***********************
     Data related code
 ***********************/
-var version = 0.86;
+var version = 0.87;
 var steam_data = {};
 var twitch_data = {};
 
@@ -1163,7 +1163,7 @@ function mouseover(d,i) {
                 .attr("y", tooltip_title_cy)
                 .attr("text-anchor", "middle")
                 .attr("fill", "white")
-                .text(title);
+                .text(simplifyText(title));
 
             // Create tooltip's logo
             var tooltip_logo_ratio = 120/45
@@ -1248,6 +1248,22 @@ function mouseout() {
         parent_obj.selectAll(".hover_hexagon").remove();
         parent_obj.selectAll(".hover_hexagon_tooltip").remove();
     }
+}
+
+function simplifyText(game_title) {
+    var max_length = 10
+    
+    var all_upper = game_title.match(/[A-Z]/g).join('');
+    var first_letters = game_title.match(/\b\w/g).join('');
+
+    if (game_title.length <= max_length) {
+        return game_title
+    } else if (all_upper <= max_length) {
+        return all_upper
+    } else if (first_letters <= max_length) {
+        return first_letters
+    }
+    return game_title.substring(0, max_length-4) + "..."
 }
 
 function transition(trans_obj,path,startpoint) {
