@@ -1176,6 +1176,8 @@ function mouseover(d,i) {
                 .attr("class", "hover_hexagon_tooltip")
                 .attr("id", "hover_hexagon_tooltip_logo")
                 .attr("xlink:href", tooltip_logo_href)
+                .attr("width", tooltip_logo_width)
+                .attr("height", tooltip_logo_height)
                 .attr("x", tooltip_logo_cx)
                 .attr("y", tooltip_logo_cy);
 
