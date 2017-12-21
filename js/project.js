@@ -1137,14 +1137,14 @@ function mouseover(d,i) {
 
 
             // Get the data to fill the tooltip
-            //var index = d3.select(this).attr("index")
-            //var rank = (index ? parseInt(index, 10) + 1 : 0)
-            //var platform = d3.select(this).attr("container")
+            var index = d3.select(this).attr("index")
+            var rank = (index ? parseInt(index, 10) + 1 : 0)
+            var platform = d3.select(this).attr("container")
             
-            //gameData = getGameDataByRank(1, 12, 2017, rank, platform)
-            //title = gameData['Name']
-            //id = gameData['ID']
-            //players = gameData['Daily Peak']
+            var gameData = getGameDataByRank(1, 12, 2017, rank, platform)
+            var title = gameData['Name']
+            var id = gameData['ID']
+            var players = gameData['Daily Peak']
 
             // Create the tooltip hexagon
             var hover_hexagon = create_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
@@ -1163,7 +1163,7 @@ function mouseover(d,i) {
                 .attr("y", tooltip_title_cy)
                 .attr("text-anchor", "middle")
                 .attr("fill", "white")
-                .text("TITLE");
+                .text(title);
 
             // Create tooltip's logo
             var tooltip_logo_ratio = 120/45
@@ -1171,10 +1171,11 @@ function mouseover(d,i) {
             var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio
             var tooltip_logo_cx = hover_hexagon_cx - tooltip_logo_width/2
             var tooltip_logo_cy = hover_hexagon_cy - tooltip_logo_height/2
+            var tooltip_logo_href = "https://steamdb.info/static/camo/apps/" + id + "/capsule_sm_120.jpg"
             var tooltip_logo = parent_obj.append("image")
                 .attr("class", "hover_hexagon_tooltip")
                 .attr("id", "hover_hexagon_tooltip_logo")
-                .attr("xlink:href", "https://steamdb.info/static/camo/apps/578080/capsule_sm_120.jpg")
+                .attr("xlink:href", tooltip_logo_href)
                 .attr("x", tooltip_logo_cx)
                 .attr("y", tooltip_logo_cy);
 
@@ -1187,7 +1188,7 @@ function mouseover(d,i) {
                 .attr("y", tooltip_rank_cy)
                 .attr("text-anchor", "middle")
                 .attr("fill", "white")
-                .text("#0");
+                .text(rank);
 
         }
         else{//hovering already selected element
