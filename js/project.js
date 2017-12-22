@@ -22,8 +22,8 @@ var g_w=450,g_h=250; // Line graph w and h
 var graph_x_position_offset=10;
 var g_x=(w/2)-g_w/2-graph_x_position_offset,g_y=0; // Line graph position
 var g_cut_w=between_hexagons/2-2*middle_polygon_margin,g_cut_h=h/2-middle_polygon_margin; //Graph cutting plane size
-var graph_axis_distance=5; // Distance between two consecutive y-axis
-var graph_y_axis_right_base_padding=4;
+var graph_axis_distance=8; // Distance between two consecutive y-axis
+var graph_y_axis_right_base_padding=1;
 var graph_margin = [60, 80, 60, 80]; // Margins
 var graph_hover_circle_radius=7.5;
 
@@ -77,7 +77,6 @@ var zoomed = d3.zoom()
 //var bisectDate = d3.bisector(function(d,i) { return d; }).left;
 
 $(document).ready(function() {
-    console.log("ready");
 
     document.getElementsByClassName( "svg-container" )[0].onwheel = function(event){
         event.preventDefault();
@@ -198,7 +197,7 @@ function getranklist(element_number, platform, date) {
 /**********************/
 
 /**
- * 
+ * slider date  updater
  */
 function update_slider_date_text(day, month, year, container_name) {
     var date=day+"/"+month+"/"+year;
@@ -209,7 +208,7 @@ function update_slider_date_text(day, month, year, container_name) {
 }
 
 /**
- * 
+ * slider circle position updater
  */
 function update_slider_position(x_pos, start, end, container_name) {
     var handle= d3.selectAll(".handle_"+container_name);
@@ -223,14 +222,12 @@ function update_slider_position(x_pos, start, end, container_name) {
 }
 
 /**
- * 
+ * handle slider event
  */
 function handle_slider(x_val, handle, scaler, obj) {
     var parent_obj=d3.select(obj.node().parentNode);
     var container_name=obj.attr("container");
 
-    var segment_number=parseInt(parent_obj.attr("segment_number"));
-    console.log("handle_slider: "+Math.ceil(x_val));
 
     if(!InTransition) {
         parent_obj.attr("segment_number",Math.ceil(x_val));
@@ -242,9 +239,9 @@ function handle_slider(x_val, handle, scaler, obj) {
 }
 
 /**
- * 
+ * adding day slider (2 of them)
  */
-function add_date_slider(parent_node, startday, endday, pos_x, pos_y, width, obj) {
+function add_day_slider(parent_node, startday, endday, pos_x, pos_y, width, obj) {
     var handle;
     var x = d3.scaleLinear()
         .domain([startday, endday])
@@ -287,7 +284,7 @@ function add_date_slider(parent_node, startday, endday, pos_x, pos_y, width, obj
 }
 
 /**
- * 
+ * create color scale
  */
 function create_color_scale(begin_clr, end_clr, domain_b, domain_e) {
     return  color = d3.scaleLinear()
@@ -297,7 +294,7 @@ function create_color_scale(begin_clr, end_clr, domain_b, domain_e) {
 }
 
 /**
- * 
+ * calculate hexagon points
  */
 function calculate_hexagon(xp, yp, radius) {
     var h = (Math.sqrt(3)/2);
@@ -313,24 +310,22 @@ function calculate_hexagon(xp, yp, radius) {
 }
 
 /**
- * 
+ * calculate big outer hexagon centers
  */
 function calculate_big_hexagon_centers() {
     var available_area=w-big_hexagon_margin.left-big_hexagon_margin.right;
     var total_width_for_hexagons=available_area-between_hexagons;
 
     big_hexagon_margin.top=(h/2-(big_radius*Math.sqrt(3)/2));
-    console.log("big_hexagon_top:",big_hexagon_margin.top);
     big_hexagon_margin.bottom=big_hexagon_margin.top;
     l_center_poly_x=(big_radius+big_hexagon_margin.left)/2;
     r_center_poly_x=(w-(big_radius+big_hexagon_margin.right))/2;
     l_center_poly_y=(big_radius*Math.sqrt(3)/2+big_hexagon_margin.top)/2;
     r_center_poly_y=(big_radius*Math.sqrt(3)/2+big_hexagon_margin.top)/2;
-    console.log("t: "+ total_width_for_hexagons+" big: "+big_hexagon_margin.top);
 }
 
 /**
- * 
+ * calculate uppermiddle polygon points
  */
 function calculate_uppermiddle_polygons() {
     var a=big_hexagon_margin.left+(3/2)*big_radius+middle_polygon_margin;
@@ -348,7 +343,7 @@ function calculate_uppermiddle_polygons() {
 }
 
 /**
- * 
+ * calculate lowermiddle polygon points
  */
 function calculate_lowermiddle_polygons() {
 
@@ -367,7 +362,7 @@ function calculate_lowermiddle_polygons() {
 }
 
 /**
- * 
+ * calculate upper_right polygon points
  */
 function calculate_upper_right_subpolygons() {
     var a=big_hexagon_margin.right+(3/2)*big_radius;
@@ -382,22 +377,9 @@ function calculate_upper_right_subpolygons() {
     ];
 }
 
-/**
- * 
- */
-//TODO modify with real data;
-function select_data_array(arr_index) {//return data array via index ={1,2,3}
-    if(arr_index==1)
-        return data1;
-    else if(arr_index==2)
-        return data2;
-    else if(arr_index==3)
-        return data3;
-    return -1;
-}
 
 /**
- * 
+ * get data scaler according to line id
  */
 function get_data_scalers(arr_index) {//return scalers (x,y) related to the array via index ={1,2,3}
 
@@ -417,7 +399,7 @@ function get_data_scalers(arr_index) {//return scalers (x,y) related to the arra
 }
 
 /**
- * 
+ * set data scaler for new line
  */
 function set_data_scalers(arr_index,x_s,y_s) {//return scalers (x,y) related to the array via index ={1,2,3}
 
@@ -437,7 +419,7 @@ function set_data_scalers(arr_index,x_s,y_s) {//return scalers (x,y) related to 
 }
 
 /**
- * 
+ * create new domain range object for scaling
  */
 function get_domain_range(arr) {// return domain (lower,upper) and range (lower,upper)
     var w = g_w - graph_margin[1] - graph_margin[3];	// width
@@ -451,24 +433,24 @@ function get_domain_range(arr) {// return domain (lower,upper) and range (lower,
 }
 
 /**
- * 
+ * initialize created domain range object with scaler and set the scaler
  */
 function initialize_scalers(data,arr_index) {//initialize scalers(x,y) by given index={1,2,3}
     var domain_range=get_domain_range(data);
+    console.log("scale range upper: "+domain_range[2].upper_b)
 
     var x_s = d3.scaleLinear().domain([domain_range[0].lower_b, domain_range[0].upper_b]).range([domain_range[1].lower_b, domain_range[1].upper_b]);
     // Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
     var y_s = d3.scaleLinear().domain([domain_range[2].lower_b, domain_range[2].upper_b]).range([domain_range[3].lower_b, domain_range[3].upper_b]);
     set_data_scalers(arr_index,x_s,y_s);
 
-    console.log("initialize:",x1_s,y1_s);
 
     return [x_s,y_s];
 
 }
 
 /**
- * 
+ * init function for the first creation
  */
 function init() {
 
@@ -482,7 +464,6 @@ function init() {
 
         var cntr=d3.select(".svg-container")
             .on("scroll.scroller",function (d) {
-                console.log("scroolll");
                 d3.event.preventDefault();
             });
         console.log(cntr);
@@ -491,10 +472,9 @@ function init() {
 }
 
 /**
- * 
+ * create all the polygons and hexagons
  */
 function polygons() {
-console.log("polygon");
 
     var upper_right_subcontainer = canvas.append("g")
         .attr("class",ur_big_subcontainer_name);
@@ -602,8 +582,8 @@ console.log("polygon");
         .attr("height", 80)
         .attr("transform", "translate(" +  (l_center_poly_x-tooltip_logo_width/2) + ", " + (l_center_poly_y-tooltip_logo_height/2) + ")");
 
-    add_date_slider(lower_container,1,7,(points[1].x)-slider_width/2,points[1].y+slider_width*2,slider_width,l_small_center_hexagon);
-    add_date_slider(lower_container,1,7,(points[2].x)-slider_width/2,points[2].y+slider_width*2,slider_width,r_small_center_hexagon);
+    add_day_slider(lower_container,1,7,(points[1].x)-slider_width/2,points[1].y+slider_width*2,slider_width,l_small_center_hexagon);
+    add_day_slider(lower_container,1,7,(points[2].x)-slider_width/2,points[2].y+slider_width*2,slider_width,r_small_center_hexagon);
 
     lower_container.append("text")
         .classed("twitch_date_text",true)
@@ -626,7 +606,6 @@ console.log("polygon");
     var color_scale_steam=create_color_scale("royalblue", "lightblue",1,element_count);
     var color_scale_twitch=create_color_scale("purple", "thistle",1,element_count);
 
-    console.log(game_list);
 
     var left_base_index=hexagon_creation_by_angle(right_container,0,r_container_name,s_radius,r_center_poly_x,r_center_poly_y,padding,element_count,game_list,color_scale_steam);//base index is the starting index of container
 
@@ -636,10 +615,9 @@ console.log("polygon");
 }
 
 /**
- * 
+ * update hexagon content for layer changing
  */
 function update_UI_element(parent_obj, obj, container_name, rank) {//parent_obj=l or r container, obj=hexagon group
-    console.log("uı update")
     var segment_number=parseInt(parent_obj.attr("segment_number"));
 
     var gameData=getGameDataByRank(segment_number,12,2017,rank,container_name);
@@ -648,12 +626,12 @@ function update_UI_element(parent_obj, obj, container_name, rank) {//parent_obj=
     var players = gameData['Daily Peak']
     obj.selectAll("text").text(simplifyText(title));
 }
-
+/**
+ * remove a line from graph
+ */
 function remove_line(element_index) {//remove element from line graph
     var graph=d3.selectAll(".graph");
-    console.log("remove_l");
 
-    console.log(graph);
     var line_count=parseInt(graph.attr("line_count"));
     var focus=graph.select(".focus");
     var line= d3.selectAll('path[element_index="' + (element_index) + '"]');
@@ -665,7 +643,6 @@ function remove_line(element_index) {//remove element from line graph
 
     line.remove();
     d3.selectAll('g[element_index="' + (element_index) + '"]').remove();
-    console.log(line_id);
     focus.select(".circle"+line_id).remove();
     text_group.remove();
 
@@ -688,7 +665,7 @@ function remove_line(element_index) {//remove element from line graph
 }
 
 /**
- * 
+ * get empty graph line places for new line creation
  */
 function get_empty_line_place() {// get the first element of missing line ids
 
@@ -715,7 +692,7 @@ function get_empty_line_place() {// get the first element of missing line ids
 }
 
 /**
- * 
+ * parse line id
  */
 function get_line_id(class_str){
 
@@ -725,7 +702,7 @@ function get_line_id(class_str){
 }
 
 /**
- * 
+ * get a list of used line ids
  */
 function get_available_line_ids() {// get sorted list of available line ids
 
@@ -743,7 +720,7 @@ function get_available_line_ids() {// get sorted list of available line ids
 }
 
 /**
- * 
+ * find the direction of the vector from an object to center
  */
 function find_big_hexagon_orientation(obj_x, obj_y, parent) {
     var parent_x=parseFloat(parent.attr("cx")),parent_y=parseFloat(parent.attr("cy"));
@@ -755,7 +732,7 @@ function find_big_hexagon_orientation(obj_x, obj_y, parent) {
 }
 
 /**
- * 
+ * handle graph
  */
 function handle_graph(element_index) {
     var w = g_w - graph_margin[1] - graph_margin[3]; // width
@@ -857,7 +834,6 @@ function handle_graph(element_index) {
         data_v.push(data[i+'H'])
     }
 
-    //TODO do not forget to set data element related to line_id (1=data1,2=data2, 3=data3) before getting scalers (x,y)
     var scalers=initialize_scalers(data_v,line_id);
     var x=scalers[0],y=scalers[1];
 
@@ -879,7 +855,7 @@ function handle_graph(element_index) {
 }
 
 /**
- * 
+ * draw line graph
  */
 function draw_graph(graph, line_count, line_id, data, x_scalar, y_scalar, line_creator, has_x_axis_exist, transition_of_x, transition_of_y, element_index) {
 
@@ -1004,7 +980,7 @@ function draw_graph(graph, line_count, line_id, data, x_scalar, y_scalar, line_c
 }
 
 /**
- * 
+ * edit text element of the value placeholder
  */
 //TODO may need editing for real data
 function update_text_element(parent_obj, text) {
@@ -1012,7 +988,7 @@ function update_text_element(parent_obj, text) {
 }
 
 /**
- * 
+ * update value points
  */
 //TODO modify here with real data
 function update_data_points_graph() {
@@ -1027,8 +1003,29 @@ function update_data_points_graph() {
         var x0 = scalers[0].invert(d3.mouse(this)[0]);
 
 
+        var line_obj=d3.selectAll(".data"+available_elements[i]);
+        var element_index=line_obj.attr("element_index");
+        var obj=d3.selectAll('path[index="' + element_index + '"]');
 
-        var curr_data_arr=select_data_array(available_elements[i]);
+        var ranking=obj.attr("ranking_index");
+        var platform=obj.attr("container");
+
+        var parent_node=d3.select(obj.node().parentNode);
+        var g_parent_node=d3.select(parent_node.node().parentNode);
+        var seg_num=g_parent_node.attr("segment_number");
+        console.log("rnaking:",seg_num);
+        var data=getGameDataByRank(seg_num,12,2017,ranking,platform);
+
+
+        var hours=[];
+        var data_v=[];
+
+        for (var j=0;j<24;j++){
+            hours.push(j+"H");
+            data_v.push((data[j+'H']))
+        }
+
+        var curr_data_arr=data_v;
         console.log(curr_data_arr);
 
         var bisection_index = Math.ceil(x0); // d3 bisection has to use for sorted date =>bisectDate(curr_data_arr, x0,1)
@@ -1054,12 +1051,11 @@ function update_data_points_graph() {
 }
 
 /**
- * 
+ * handle scroll animation
  */
 function handle_scroll_event_updated(parent_obj,unit_coefficient) {
     var elements;
     var central_hexagon=parent_obj.selectAll(".center_hexagon");
-    console.log(parent_obj)
     var parent_x=parseFloat(central_hexagon.attr("cx"));
     var parent_y=parseFloat(central_hexagon.attr("cy"));
     InTransition=true;
@@ -1100,15 +1096,9 @@ function handle_scroll_event_updated(parent_obj,unit_coefficient) {
 
 }
 
-/**
- * 
- */
-function handle_elements(elements) {
-    console.log("handle element");
-}
 
 /**
- * 
+ * create hover hexagon
  */
 function calculate_hover_hexagon(center_x, center_y, container) {
     var central_distance=(s_radius*Math.sqrt(3)/2)+(hover_container_radius*Math.sqrt(3)/2)+padding;
@@ -1123,9 +1113,7 @@ function calculate_hover_hexagon(center_x, center_y, container) {
         orientation[1]=-1;
     if (orientation[0]==0)
         orientation[0]=-1;
-    console.log("container: ",central_hexagon);
-    console.log(central_hexagon);
-    console.log(orientation);
+
 
     h_center_x=center_x+orientation[0]*h_center_offset_x;
     h_center_y=center_y+orientation[1]*h_center_offset_y;
@@ -1134,30 +1122,9 @@ function calculate_hover_hexagon(center_x, center_y, container) {
 
 }
 
-/**
- * 
- */
-//this function can be used to get all selected elements id in this container when zoom event is happened
-//for an element that is the same container
-// (can be used to get all selected genres).return array includes zoomed obj as well.
-// TODO can be modifiy to return DOM elements
-function return_selected_ids_in_container(parent_obj) {
-
-    var obj_arr=[];
-
-    parent_obj.selectAll(".clicked").each(function (d, i) {
-        var cont_obj=d3.select(this);
-        var obj=cont_obj.selectAll("path");
-
-        var index=parseInt(obj.attr("index"));
-        obj_arr.push(index);
-    });
-
-    return obj_arr;
-}
 
 /**
- * 
+ * zoom event trigger func.
  */
 function zoom() {
 
@@ -1165,28 +1132,18 @@ function zoom() {
     var cont_obj = d3.select(this);
     var obj=cont_obj.selectAll("path");
     var parent_obj = d3.select(this.parentNode);//parent of it (left_container, right_container)
-    console.log(parent_obj);
 
 
     var segment_number=parseInt(parent_obj.attr("segment_number"));
-    console.log("zoom: "+segment_number);
 
     if(segment_number==1)
 
         if(direction=="down") // If we are in the first segment, we cannot go back
             return;
 
-        else { // We choose some elements on the first segment lets say fps,mmo etc so we get selected element_ids and can get genres
-            var get_selected_element_ids=return_selected_ids_in_container(parent_obj);
-            console.log("selected_id: "+get_selected_element_ids);
 
-        }
     if(segment_number==segment_limit && direction=="up") // If we are in the last segment, we cannot go further
         return;
-
-
-    console.log(direction);
-    console.log(parent_obj);
 
 
     if(!InTransition) {
@@ -1206,7 +1163,7 @@ function zoom() {
 }
 
 /**
- * 
+ * zoom garbage collector(remove graph, deselect etc.)
  */
 function zoom_event_garbage_collector(){//can be add any feature to remove on zoom event
 
@@ -1218,9 +1175,6 @@ function zoom_event_garbage_collector(){//can be add any feature to remove on zo
 
         var parent_obj = d3.select(this.parentNode);
         var element_index=parseInt(obj.attr("index"));
-        console.log("collector");
-
-        console.log("garbage",element_index);
 
         var def_color=obj.attr("def_color");
         obj.attr("fill",def_color);
@@ -1240,7 +1194,7 @@ function zoom_event_garbage_collector(){//can be add any feature to remove on zo
 }
 
 /**
- * 
+ * mouseClick event trigger func.
  */
 function mouseClick(d) {
     var cont_obj = d3.select(this);
@@ -1273,7 +1227,6 @@ function mouseClick(d) {
 
         else {
             if (cont_obj.classed("clicked")) {
-                console.log("deselect");
                 cont_obj.classed("clicked", false);
                 var def_color=obj.attr("def_color");
 
@@ -1290,15 +1243,9 @@ function mouseClick(d) {
     }
 }
 
-/**
- * 
- */
-function mouseup() {
-
-}
 
 /**
- * 
+ * mouseover event trigger func.
  */
 function mouseover(d,i) {
 
@@ -1334,7 +1281,6 @@ function mouseover(d,i) {
             var segment_number=parseInt(parent_obj.attr("segment_number"));
             
             var gameData = getGameDataByRank(segment_number, 12, 2017, rank, platform);
-            console.log(rank, platform)
             var title = gameData['Name']
             var id = gameData['ID']
             var players = gameData['Daily Peak']
@@ -1405,7 +1351,7 @@ function mouseover(d,i) {
 }
 
 /**
- * 
+ * mouseout event trigger func.
  */
 function mouseout() {
 
@@ -1426,7 +1372,7 @@ function mouseout() {
 }
 
 /**
- * 
+ * simplify game text event
  */
 function simplifyText(game_title) {
     var max_length = 10
@@ -1445,7 +1391,7 @@ function simplifyText(game_title) {
 }
 
 /**
- * 
+ * hover point transition helper
  */
 function transition(trans_obj,path,startpoint) {
 
@@ -1461,7 +1407,7 @@ function transition(trans_obj,path,startpoint) {
 }
 
 /**
- * 
+ * hover point transition
  */
 function translateAlong(path,startpoint) {
 
@@ -1480,7 +1426,7 @@ function translateAlong(path,startpoint) {
 }
 
 /**
- * 
+ * hover point transition helper
  */
 function pathStartPoint(path) {
 
@@ -1490,7 +1436,7 @@ function pathStartPoint(path) {
 }
 
 /**
- * 
+ * create hexagon structure using angle
  */
 function hexagon_creation_by_angle(container, base_index, container_name, radius, x, y, padding, element_number, gamelist, color_scale) {
     var radius_arr=[];
@@ -1529,7 +1475,6 @@ function hexagon_creation_by_angle(container, base_index, container_name, radius
 
                 var small_hexagon_group=container.append("g")
                     .on("click", mouseClick)
-                    .on("mouseup", mouseup)
                     .on("mouseover", mouseover)
                     .on("mouseout", mouseout)
                     .classed("small_hexagon_group",true);
