@@ -49,6 +49,8 @@ var text_area_inner_margin=12;
 var text_graph_hover_circle_radius=5;
 
 var element_count=18;
+var segment_limit=7;
+
 
 
 /* For star shape creation
@@ -112,10 +114,11 @@ function getDateAsString(day, month, year) {
     return day + '_' + month + '_' + year
 }
 
-function fetchData(day, month, year, platform) {
-    console.log('Fetching data for ' + platform);
+function fetchData(day, month, year, platform ) {
 
     dateAsString = getDateAsString(day, month, year);
+    console.log('Fetching data for ' + platform+" date: "+dateAsString);
+
     fileNameAsString = dateAsString + '_' + platform + '.csv';
     fullStringUrl = 'data/' + platform + '/' + fileNameAsString;
     $.ajax({
@@ -123,12 +126,16 @@ function fetchData(day, month, year, platform) {
         url: fullStringUrl,
         dataType: "text",
         success: function(data) {loadTextAsData(data, dateAsString, platform);}
-    }).done(function(dateAsString){
+    }).done(function(){
         if(platform=="twitch") {
+            day++;
+            fetchData(day, month, year, 'steam');
+
+        if(day==segment_limit)
             init();
         }
         else{
-            fetchData(1, 12, 2017, 'twitch')
+            fetchData(day, month, year, 'twitch')
 
         }
 
@@ -479,8 +486,8 @@ console.log("polygon");
 //TODO USE THIS DATE FORMAT!!!
     var date={"day":1,"month":12,"year":2017};
     var game_list=getranklist(element_count+1,r_container_name,date);
-    var color_scale_steam=create_color_scale("steelblue", "brown",1,element_count);
-    var color_scale_twitch=create_color_scale("steelblue", "red",1,element_count);
+    var color_scale_steam=create_color_scale("steelblue", "green",1,element_count);
+    var color_scale_twitch=create_color_scale("steelblue", "purple",1,element_count);
 
 
     console.log(game_list);
@@ -495,9 +502,24 @@ console.log("polygon");
 
 
 }
+function update_UI_element(parent_obj, obj, container_name,rank)//parent_obj=l or r container, obj=hexagon group
+{
+    console.log("uı update")
+    var segment_number=parseInt(parent_obj.attr("segment_number"));
+
+    var gameData=getGameDataByRank(segment_number,12,2017,rank,container_name);
+    var title = gameData['Name']
+    var id = gameData['ID']
+    var players = gameData['Daily Peak']
+    obj.selectAll("text").text(simplifyText(title));
+
+}
 
 function remove_line(element_index) {//remove element from line graph
     var graph=d3.selectAll(".graph");
+    console.log("remove_l");
+
+    console.log(graph);
     var line_count=parseInt(graph.attr("line_count"));
     var focus=graph.select(".focus");
     var line= d3.selectAll('path[element_index="' + (element_index) + '"]');
@@ -957,6 +979,9 @@ function handle_scroll_event_updated(parent_obj,unit_coefficient) {
 
         elements+=parent_obj.selectAll('path[floor="' + (g) + '"]').each(function (d, i) {
             var curr_obj = d3.select(this);
+            var container_name=curr_obj.attr("container");
+            var rank = parseInt(curr_obj.attr("ranking_index"))+1;
+
             var cont_obj = d3.select(this.parentNode);
 
             var index = curr_obj.attr("index");
@@ -971,7 +996,7 @@ function handle_scroll_event_updated(parent_obj,unit_coefficient) {
                 .delay(0.5)
                 .on("end",function(){
                     if(unit_coefficient<0) {
-                        handle_elements(elements);
+                        update_UI_element(parent_obj,cont_obj,container_name,rank);
                         handle_scroll_event_updated(parent_obj, 0);
                     }
                     else {
@@ -1066,7 +1091,7 @@ function zoom() {
             console.log("selected_id: "+get_selected_element_ids);
 
         }
-    if(segment_number==3 && direction=="up")//if we are in the last segment, we cannot go further
+    if(segment_number==segment_limit && direction=="up")//if we are in the last segment, we cannot go further
         return;
 
 
@@ -1087,7 +1112,9 @@ function zoom_event_garbage_collector(){//can be add any feature to remove on zo
         var obj=cont_obj.selectAll("path");
 
         var parent_obj = d3.select(this.parentNode);
-        var element_index=obj.attr("index");
+        var element_index=parseInt(obj.attr("index"));
+        console.log("collector");
+
         console.log("garbage",element_index);
 
         var def_color=obj.attr("def_color");
@@ -1097,13 +1124,15 @@ function zoom_event_garbage_collector(){//can be add any feature to remove on zo
         event.initEvent("click",true,true);
         this.dispatchEvent(event);
 
-        remove_line(element_index);
-        obj.attr("related_line_number",null);
+        //remove_line(element_index);
+        //obj.attr("related_line_number",null);
         cont_obj.classed("clicked", false);
         cont_obj.on('.zoom', null);
 
 
         parent_obj.selectAll(".small_selection_ball").remove();
+        parent_obj.selectAll(".hover_hexagon_tooltip").remove();
+
 
 
     });
@@ -1196,9 +1225,10 @@ function mouseover(d,i) {
 
             // Get the data to fill the tooltip
             var rank = parseInt(obj.attr("ranking_index"))+1;
-            var platform = obj.attr("container")
+            var platform = obj.attr("container");
+            var segment_number=parseInt(parent_obj.attr("segment_number"));
             
-            var gameData = getGameDataByRank(1, 12, 2017, rank, platform)
+            var gameData = getGameDataByRank(segment_number, 12, 2017, rank, platform);
             console.log(rank, platform)
             var title = gameData['Name']
             var id = gameData['ID']
