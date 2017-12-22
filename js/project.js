@@ -48,6 +48,8 @@ var point_hover_color="yellow";
 var text_area_inner_margin=12;
 var text_graph_hover_circle_radius=5;
 
+var element_count=18;
+
 
 /* For star shape creation
 var element_number=12;
@@ -89,6 +91,9 @@ $(document).ready(function() {
         event.preventDefault();
     };
 });
+
+
+
 /***********************
     Data related code
 ***********************/
@@ -100,9 +105,7 @@ console.log('Version: '.concat(version));
 
 $(document).ready(function() {
     fetchData(1, 12, 2017, 'steam');
-    fetchData(1, 12, 2017, 'twitch')
 });
-
 
 
 function getDateAsString(day, month, year) {
@@ -120,13 +123,22 @@ function fetchData(day, month, year, platform) {
         url: fullStringUrl,
         dataType: "text",
         success: function(data) {loadTextAsData(data, dateAsString, platform);}
+    }).done(function(dateAsString){
+        if(platform=="twitch") {
+            init();
+        }
+        else{
+            fetchData(1, 12, 2017, 'twitch')
+
+        }
+
     });
 }
 
 function loadTextAsData(allText, key, platform) {
     console.log('Loading ' + platform + ' data into memory');
 
-    data = d3.csvParse(allText);
+    var data = d3.csvParse(allText);
     switch(platform) {
         case 'steam':
             steam_data[key] = data;
@@ -138,10 +150,12 @@ function loadTextAsData(allText, key, platform) {
             console.log('Unknown platform specified: "' + platform + '"');
             break;
     }
+    console.log('Loading ' + platform + ' finished');
+
 }
 
 function getGameDataByRank(day, month, year, rank, platform) {
-    data = null;
+    var data = null;
     switch(platform) {
         case 'steam':
             data = steam_data;
@@ -158,7 +172,25 @@ function getGameDataByRank(day, month, year, rank, platform) {
     }
     return null
 }
+function getranklist(element_number,platform,date) {
+
+    var gameArray=[];
+
+    for(var i=0;i<element_number;i++){
+
+        var gameData = getGameDataByRank(date.day, date.month, date.year, i, platform);
+        gameArray.push(gameData);
+    }
+    return gameArray;
+
+}
 /**********************/
+function create_color_scale(begin_clr,end_clr,domain_b,domain_e) {
+    return  color = d3.scaleLinear()
+        .domain([domain_b,domain_e])
+        .range([begin_clr, end_clr])
+        .interpolate(d3.interpolateHcl);
+}
 
 function calculate_hexagon(xp,yp,radius) {//small hexagon drawer
     var h = (Math.sqrt(3)/2);
@@ -309,7 +341,8 @@ function initialize_scalers(arr_index) {//initialize scalers(x,y) by given index
 
 function init() {
 
-        calculate_big_hexagon_centers();
+
+    calculate_big_hexagon_centers();
         canvas = d3.select(".svg-container")
         .append("svg")
         .attr("preserveAspectRatio", "xMinYMin meet")
@@ -333,7 +366,7 @@ function init() {
 }
 
 function polygons() {
-
+console.log("polygon");
 
         //var line_point=[[(w/2),big_hexagon_margin],[(w/2),h-line_margin_down]];
     var upper_right_subcontainer = canvas.append("g")
@@ -443,10 +476,20 @@ function polygons() {
         //.on("mouseout", mouseout)
         .classed("center_hexagon", true);
 
+//TODO USE THIS DATE FORMAT!!!
+    var date={"day":1,"month":12,"year":2017};
+    var game_list=getranklist(element_count+1,r_container_name,date);
+    var color_scale_steam=create_color_scale("steelblue", "brown",1,element_count);
+    var color_scale_twitch=create_color_scale("steelblue", "red",1,element_count);
 
 
-    var left_base_index=hexagon_creation_by_angle(right_container,0,r_container_name,s_radius,r_center_poly_x,r_center_poly_y,padding,18);//base index is the starting index of container
-    hexagon_creation_by_angle(left_container,left_base_index,l_container_name,s_radius,l_center_poly_x,l_center_poly_y,padding,18);
+    console.log(game_list);
+
+    var left_base_index=hexagon_creation_by_angle(right_container,0,r_container_name,s_radius,r_center_poly_x,r_center_poly_y,padding,element_count,game_list,color_scale_steam);//base index is the starting index of container
+
+    game_list=getranklist(element_count+1,l_container_name,date);
+
+    hexagon_creation_by_angle(left_container,left_base_index+1,l_container_name,s_radius,l_center_poly_x,l_center_poly_y,padding,element_count,game_list,color_scale_twitch);
 
     //create_hexagon_shape(left_container,"left_container",s_radius,l_center_poly_x,l_center_poly_y,padding,element_number);
 
@@ -890,6 +933,7 @@ function handle_scroll_event(parent_obj,unit_coefficient) {
 function handle_scroll_event_updated(parent_obj,unit_coefficient) {
     var elements;
     var central_hexagon=parent_obj.selectAll(".center_hexagon");
+    console.log(parent_obj)
     var parent_x=parseFloat(central_hexagon.attr("cx"));
     var parent_y=parseFloat(central_hexagon.attr("cy"));
     InTransition=true;
@@ -913,12 +957,14 @@ function handle_scroll_event_updated(parent_obj,unit_coefficient) {
 
         elements+=parent_obj.selectAll('path[floor="' + (g) + '"]').each(function (d, i) {
             var curr_obj = d3.select(this);
+            var cont_obj = d3.select(this.parentNode);
+
             var index = curr_obj.attr("index");
             var cx = parseFloat(curr_obj.attr("cx"));
             var cy = parseFloat(curr_obj.attr("cy"));
             var dif_vector={"x":parent_x-cx,"y":parent_y-cy};
 
-            curr_obj.transition()
+            cont_obj.transition()
                 .duration(1000)
                 .attr("transform", "translate(" + (-unit_coefficient* dif_vector.x) + ", " + (-unit_coefficient*dif_vector.y) + ")")
                 .transition()
@@ -942,7 +988,7 @@ function handle_scroll_event_updated(parent_obj,unit_coefficient) {
 function handle_elements(elements){
     console.log("handle element");
 }
-function create_hover_hexagon(center_x,center_y,container) {
+function calculate_hover_hexagon(center_x, center_y, container) {
     var central_distance=(s_radius*Math.sqrt(3)/2)+(hover_container_radius*Math.sqrt(3)/2)+padding;
     var central_hexagon=container.selectAll(".center_hexagon");
     var h_center_offset_x=central_distance*Math.sqrt(3)/2;
@@ -974,14 +1020,9 @@ function create_hover_hexagon(center_x,center_y,container) {
         console.error("hover:wrong container name");
     }*/
 
-    var hover_hexagon = container.append("path")
-        .attr("d", drawPolygon(calculate_hexagon(h_center_x, h_center_y, hover_container_radius)))
-        .attr("class", "hover_hexagon")
-        .attr("cx", h_center_x)
-        .attr("cy", h_center_y)
-        .attr("radius", hover_container_radius);
 
-    return hover_hexagon
+
+    return [h_center_x, h_center_y];
 
 }
 
@@ -994,7 +1035,9 @@ function return_selected_ids_in_container(parent_obj){
     var obj_arr=[];
 
     parent_obj.selectAll(".clicked").each(function (d, i) {
-        var obj=d3.select(this);
+        var cont_obj=d3.select(this);
+        var obj=cont_obj.selectAll("path");
+
         var index=parseInt(obj.attr("index"));
         obj_arr.push(index);
     });
@@ -1004,8 +1047,12 @@ function return_selected_ids_in_container(parent_obj){
 function zoom() {
 
     var direction = d3.event.sourceEvent.deltaY > 0 ? 'down' : 'up';
-    var obj = d3.select(this);//zoomed element
+    var cont_obj = d3.select(this);
+    var obj=cont_obj.selectAll("path");
     var parent_obj = d3.select(this.parentNode);//parent of it (left_container, right_container)
+    console.log(parent_obj);
+
+
     var segment_number=parseInt(parent_obj.attr("segment_number"));
     console.log("zoom: "+segment_number);
 
@@ -1036,20 +1083,24 @@ function zoom_event_garbage_collector(){//can be add any feature to remove on zo
 
     d3.selectAll(".clicked").each(function (d, i) {
 
-        var obj = d3.select(this);
+        var cont_obj = d3.select(this);
+        var obj=cont_obj.selectAll("path");
+
         var parent_obj = d3.select(this.parentNode);
         var element_index=obj.attr("index");
+        console.log("garbage",element_index);
 
-        obj.attr("fill","black");
-        /*
+        var def_color=obj.attr("def_color");
+        obj.attr("fill",def_color);
+
         var event = document.createEvent('SVGEvents');
         event.initEvent("click",true,true);
         this.dispatchEvent(event);
-        */
+
         remove_line(element_index);
         obj.attr("related_line_number",null);
-        obj.classed("clicked", false);
-        obj.on('.zoom', null);
+        cont_obj.classed("clicked", false);
+        cont_obj.on('.zoom', null);
 
 
         parent_obj.selectAll(".small_selection_ball").remove();
@@ -1062,20 +1113,21 @@ function mousedown(d) {
 }
 */
 function mouseClick(d) {
-    var obj = d3.select(this);
+    var cont_obj = d3.select(this);
+    var obj=cont_obj.selectAll("path");
     var parent_obj = d3.select(this.parentNode);
 
     var element_index=obj.attr("index");
     var clicked_object_count = d3.selectAll(".clicked").size();
 
     if (!InTransition) {
-        if (!obj.classed("clicked") && clicked_object_count<3) {//at most 3 clicked object
-            obj.classed("clicked", true);
+        if (!cont_obj.classed("clicked") && clicked_object_count<3) {//at most 3 clicked object
+            cont_obj.classed("clicked", true);
             obj.transition().attr("fill", "red");
-            obj.call(d3.zoom()
+            cont_obj.call(d3.zoom()
                 .on("zoom", zoom));
 
-            obj.on("dblclick.zoom", null);
+            cont_obj.on("dblclick.zoom", null);
 
 
 
@@ -1083,23 +1135,25 @@ function mouseClick(d) {
             obj.attr("related_line_number",line_number);// used for coloring small selection ball
 
 
-            parent_obj.selectAll(".hover_hexagon").remove();
+            parent_obj.selectAll(".hover_hexagon_tooltip").remove();
             parent_obj.selectAll(".small_selection_ball")
                         .attr("id","point_of_line"+line_number);
 
         }
 
         else {
-            if (obj.classed("clicked")) {
+            if (cont_obj.classed("clicked")) {
                 console.log("deselect");
-                obj.classed("clicked", false);
-                obj.transition().attr("fill", "black");
-                obj.on('.zoom', null);
+                cont_obj.classed("clicked", false);
+                var def_color=obj.attr("def_color");
+
+                obj.transition().attr("fill", def_color);
+                cont_obj.on('.zoom', null);
 
                 remove_line(element_index);
                 obj.attr("related_line_number",null);
                 parent_obj.selectAll(".small_selection_ball").remove();
-                obj.dispatch("mouseover");
+                cont_obj.dispatch("mouseover");
             }
         }
 
@@ -1109,15 +1163,19 @@ function mouseClick(d) {
 function mouseup() {
 
 }
+
+
+
 function mouseover(d,i) {
 
-    var obj = d3.select(this);
+    var cont_obj = d3.select(this);
+    var obj=cont_obj.selectAll("path");
+
     var parent_obj = d3.select(this.parentNode);
-    var element_index=obj.attr("index");
 
     if (!InTransition) {
         //common event for already selected and hovered / not selected and hovered element
-        obj.classed("selected", true);
+        cont_obj.classed("selected", true);
 
         var startPoint = pathStartPoint(obj.node());
 
@@ -1128,7 +1186,7 @@ function mouseover(d,i) {
             .attr("r", hover_point_radius)
             .classed("small_selection_ball", true);
 
-        if (!obj.classed("clicked")) {//hovering not selected element
+        if (!cont_obj.classed("clicked")) {//hovering not selected element
 
             var obj_c_x = parseFloat(obj.attr("cx"));
             var obj_c_y = parseFloat(obj.attr("cy"));
@@ -1137,57 +1195,70 @@ function mouseover(d,i) {
 
 
             // Get the data to fill the tooltip
-            var index = d3.select(this).attr("index")
-            var rank = (index ? parseInt(index, 10) + 1 : 0)
-            var platform = d3.select(this).attr("container")
+            var rank = parseInt(obj.attr("ranking_index"))+1;
+            var platform = obj.attr("container")
             
             var gameData = getGameDataByRank(1, 12, 2017, rank, platform)
+            console.log(rank, platform)
             var title = gameData['Name']
             var id = gameData['ID']
             var players = gameData['Daily Peak']
 
             // Create the tooltip hexagon
-            var hover_hexagon = create_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
+            var position = calculate_hover_hexagon(obj_c_x,obj_c_y,parent_obj);
+
 
             // Create the tooltip's content
-            var hover_hexagon_cx = hover_hexagon.attr("cx");
-            var hover_hexagon_cy = hover_hexagon.attr("cy");
-            var hover_hexagon_radius = hover_hexagon.attr("radius");
+
+            var hover_hexagon_radius = hover_container_radius;
+
+            var hover_hexagon_tooltip_content=parent_obj
+                .append("g")
+                .classed("hover_hexagon_tooltip",true)
+                .attr("transform", "translate(" +  position[0] + ", " + position[1] + ")");
+
+            var hover_hexagon = hover_hexagon_tooltip_content.append("path")
+                .attr("d", drawPolygon(calculate_hexagon(0, 0, hover_container_radius)))
+                .attr("class", "hover_hexagon")
+                .attr("radius", hover_container_radius);
 
             // Create tooltip's title
-            var tooltip_title_cy = hover_hexagon_cy - 0.5 * hover_hexagon_radius
-            var tooltip_title = parent_obj.append("text")
+            var tooltip_title_cy = - 0.5 * hover_hexagon_radius
+            var tooltip_title = hover_hexagon_tooltip_content.append("text")
                 .attr("class", "hover_hexagon_tooltip")
                 .attr("id", "hover_hexagon_tooltip_title")
-                .attr("x", hover_hexagon_cx)
+                .attr("x", 0)
                 .attr("y", tooltip_title_cy)
                 .attr("text-anchor", "middle")
                 .attr("fill", "white")
                 .text(simplifyText(title));
 
             // Create tooltip's logo
-            var tooltip_logo_ratio = 120/45
-            var tooltip_logo_width = 120
-            var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio
-            var tooltip_logo_cx = hover_hexagon_cx - tooltip_logo_width/2
-            var tooltip_logo_cy = hover_hexagon_cy - tooltip_logo_height/2
-            var tooltip_logo_href = "https://steamdb.info/static/camo/apps/" + id + "/capsule_sm_120.jpg"
-            var tooltip_logo = parent_obj.append("image")
+            var tooltip_logo_ratio = 120/45;
+            var tooltip_logo_width = 120;
+            var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio;
+            var tooltip_logo_cx =  - tooltip_logo_width/2;
+            var tooltip_logo_cy =  - tooltip_logo_height/2;
+            var tooltip_logo_href = "https://steamdb.info/static/camo/apps/" + id + "/capsule_sm_120.jpg";
+            var tooltip_logo = hover_hexagon_tooltip_content.append("image")
                 .attr("class", "hover_hexagon_tooltip")
                 .attr("id", "hover_hexagon_tooltip_logo")
                 .attr("xlink:href", tooltip_logo_href)
                 .attr("width", tooltip_logo_width)
                 .attr("height", tooltip_logo_height)
-                .attr("x", tooltip_logo_cx)
-                .attr("y", tooltip_logo_cy);
+                .attr("transform", "translate(" +  tooltip_logo_cx + ", " + tooltip_logo_cy + ")");
+
+            //.attr("x", tooltip_logo_cx)
+                //.attr("y", tooltip_logo_cy);
 
             // Creat tooltip's rank
-            var tooltip_rank_cy = hover_hexagon_cy + 0.5 * hover_hexagon_radius
-            var tooltip_rank = parent_obj.append("text")
+            var tooltip_rank_cy = 0.5 * hover_hexagon_radius
+            var tooltip_rank = hover_hexagon_tooltip_content.append("text")
                 .attr("class", "hover_hexagon_tooltip")
                 .attr("id", "hover_hexagon_tooltip_rank")
-                .attr("x", hover_hexagon_cx)
-                .attr("y", tooltip_rank_cy)
+                .attr("transform", "translate(" +  0 + ", " + (tooltip_rank_cy) + ")")
+                //.attr("x", hover_hexagon_cx)
+                //.attr("y", tooltip_rank_cy)
                 .attr("text-anchor", "middle")
                 .attr("fill", "white")
                 .text(rank);
@@ -1237,16 +1308,19 @@ function mouseover(d,i) {
 }
 function mouseout() {
 
+    var cont_obj = d3.select(this);
+    var obj=cont_obj.selectAll("path");
     var parent_obj = d3.select(this.parentNode);
 
     if (!InTransition) {
 
         canvas.selectAll(".small_selection_ball").remove();
-        if(!d3.select(this).classed("clicked"))
-            d3.select(this).attr("fill", "black");
-        d3.select("#tooltip").classed("hidden", true);
-        parent_obj.selectAll(".hover_hexagon").remove();
-        parent_obj.selectAll(".hover_hexagon_tooltip").remove();
+        if(!cont_obj.classed("clicked")) {
+            var def_color=obj.attr("def_color");
+
+            obj.attr("fill", def_color);
+        }
+        d3.selectAll(".hover_hexagon_tooltip").remove();
     }
 }
 
@@ -1386,8 +1460,7 @@ function calculate_hexagon_center(neig_number,multiplier,padding,r){
 
 }*/
 
-function hexagon_creation_by_angle(container,base_index,container_name,radius,x,y,padding,element_number){
-
+function hexagon_creation_by_angle(container,base_index,container_name,radius,x,y,padding,element_number,gamelist,color_scale){
     var radius_arr=[];
     var angle=[];
     var floor_number = (element_number>6) ? 2:1;//if element number is bigger than 6 then we will build 2 floor
@@ -1414,9 +1487,22 @@ function hexagon_creation_by_angle(container,base_index,container_name,radius,x,
                 var d_center_diff_y = y + Math.sin(radians) * radius_arr[l];
                 //var center_diff = rotate(x, y, d_center_diff_x, d_center_diff_y, (angle * k));
                 var unique_index=floor_base_index+l*6+k;
+                var ranking_index=(unique_index-6*l+l)+(radius_arr.length-1)*k-base_index;
+
+                var gameData = gamelist[ranking_index+1];
+
+                var title = gameData['Name']
+
                 if((unique_index-base_index)==element_number)//we reached aimed element number
                     return unique_index;
-                var small_hexagon = container.append("path")
+
+                var small_hexagon_group=container.append("g")
+                    .on("click", mouseClick)
+                    .on("mouseup", mouseup)
+                    .on("mouseover", mouseover)
+                    .on("mouseout", mouseout)
+                    .classed("small_hexagon_group",true);
+                var small_hexagon = small_hexagon_group.append("path")
                     .attr("d", drawPolygon(calculate_hexagon(d_center_diff_x, d_center_diff_y, radius)))
                     .attr("stroke", "red")
                     .attr("stroke-dasharray", "20,5")
@@ -1424,13 +1510,21 @@ function hexagon_creation_by_angle(container,base_index,container_name,radius,x,
                     .attr("cx", d_center_diff_x)
                     .attr("cy", d_center_diff_y)
                     .attr("floor", i)
+                    .attr("fill",color_scale(ranking_index+1))
+                    .attr("def_color",color_scale(ranking_index+1))
                     .attr("hexagon-type", "neigbourhood")
                     .attr("container",container_name)
                     .attr("index", unique_index)
-                    .on("click", mouseClick)
-                    .on("mouseup", mouseup)
-                    .on("mouseover", mouseover)
-                    .on("mouseout", mouseout);
+                    .attr("ranking_index", ranking_index);
+
+
+                small_hexagon_group.append("text")
+                    .attr("class", "small_hexagon_text")
+                    .attr("transform", "translate(" +  d_center_diff_x + ", " + d_center_diff_y + ")")
+
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "white")
+                    .text(simplifyText(title));
 
 
             }
