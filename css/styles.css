@@ -100,6 +100,7 @@ svg {
 
 .x.axis text {
     font-size: 14;
+
 }
 .y.axis1 line, .y.axis1 path, .y.axis1 text{
     fill: none;
@@ -115,6 +116,7 @@ svg {
 }
 .y.axis text {
     font-size: 14;
+
 }
 .small_selection_ball{
 
@@ -194,6 +196,8 @@ svg {
 .test_area text
 {
     font-size:100%;
+    font-weight:700;
+
 }
 .test_area .text1
 {
@@ -207,3 +211,8 @@ svg {
   {
       fill: red;
   }
+.small_hexagon_group,.hover_hexagon_tooltip text
+{
+    font-size:85%;
+    font-weight:700;
+}

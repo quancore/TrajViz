@@ -451,6 +451,7 @@ console.log("polygon");
         .attr("stroke", "red")
         .attr("stroke-dasharray","20,5");*/
 
+
     var r_small_center_hexagon=right_container.append("path")
         .attr("d", drawPolygon(calculate_hexagon(r_center_poly_x,r_center_poly_y,s_radius)))
         .attr("stroke", "red")
@@ -465,6 +466,18 @@ console.log("polygon");
         //.on("mouseover", mouseover)
         //.on("mouseout", mouseout)
         .classed("center_hexagon", true);
+
+    var tooltip_logo_ratio = (s_radius*2)/(s_radius*2);
+    var tooltip_logo_width = s_radius*2;
+    var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio;
+    var tooltip_logo_href = "../assets/steam_logo.png";
+    var tooltip_logo = right_container.append("image")
+        .attr("class", "central_logo")
+        .attr("xlink:href", tooltip_logo_href)
+        .attr("width", 80)
+        .attr("height", 80)
+        .attr("transform", "translate(" +  (r_center_poly_x-tooltip_logo_width/2) + ", " + (r_center_poly_y-tooltip_logo_height/2) + ")");
+
 
 
 
@@ -483,11 +496,23 @@ console.log("polygon");
         //.on("mouseout", mouseout)
         .classed("center_hexagon", true);
 
+    var tooltip_logo_ratio = (s_radius*2)/(s_radius*2);
+    var tooltip_logo_width = s_radius*2;
+    var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio;
+    var tooltip_logo_href = "../assets/twitch_logo.png";
+    var tooltip_logo = left_container.append("image")
+        .attr("class", "central_logo")
+        .attr("xlink:href", tooltip_logo_href)
+        .attr("width", 80)
+        .attr("height", 80)
+        .attr("transform", "translate(" +  (l_center_poly_x-tooltip_logo_width/2) + ", " + (l_center_poly_y-tooltip_logo_height/2) + ")");
+
+
 //TODO USE THIS DATE FORMAT!!!
     var date={"day":1,"month":12,"year":2017};
     var game_list=getranklist(element_count+1,r_container_name,date);
-    var color_scale_steam=create_color_scale("steelblue", "green",1,element_count);
-    var color_scale_twitch=create_color_scale("steelblue", "purple",1,element_count);
+    var color_scale_steam=create_color_scale("royalblue", "lightblue",1,element_count);
+    var color_scale_twitch=create_color_scale("purple", "thistle",1,element_count);
 
 
     console.log(game_list);
@@ -1551,7 +1576,6 @@ function hexagon_creation_by_angle(container,base_index,container_name,radius,x,
                 small_hexagon_group.append("text")
                     .attr("class", "small_hexagon_text")
                     .attr("transform", "translate(" +  d_center_diff_x + ", " + d_center_diff_y + ")")
-
                     .attr("text-anchor", "middle")
                     .attr("fill", "white")
                     .text(simplifyText(title));
