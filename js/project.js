@@ -51,6 +51,9 @@ var text_graph_hover_circle_radius=5;
 var element_count=18;
 var segment_limit=7;
 
+var slider_width=100;
+
+
 
 
 /* For star shape creation
@@ -93,7 +96,6 @@ $(document).ready(function() {
         event.preventDefault();
     };
 });
-
 
 
 /***********************
@@ -192,6 +194,90 @@ function getranklist(element_number,platform,date) {
 
 }
 /**********************/
+function update_slider_date_text(day,month,year,container_name) {
+    var date=day+"/"+month+"/"+year;
+    var container_full_name=container_name+"_date_text";
+    var obj=d3.selectAll("."+container_full_name);
+    obj.text(date);
+
+}
+function update_slider_position(x_pos,start,end,container_name) {
+    var handle= d3.selectAll(".handle_"+container_name);
+
+    var x = d3.scaleLinear()
+        .domain([start, end])
+        .range([0, slider_width])
+        .clamp(true);
+    handle.attr("transform", "translate(" +x(x_pos) + "," + 0 + ")");
+
+}
+function handle_slider(x_val,handle,scaler,obj){
+
+
+    var parent_obj=d3.select(obj.node().parentNode);
+    var container_name=obj.attr("container");
+
+
+
+    var segment_number=parseInt(parent_obj.attr("segment_number"));
+    console.log("handle_slider: "+Math.ceil(x_val));
+
+
+    if(!InTransition) {
+        parent_obj.attr("segment_number",Math.ceil(x_val));
+        update_slider_position(Math.ceil(x_val),scaler.domain()[0],scaler.domain()[1],container_name);
+        zoom_event_garbage_collector();
+        handle_scroll_event_updated(parent_obj, -1);
+        update_slider_date_text(Math.ceil(x_val),12,2017,container_name);
+    }
+}
+function add_date_slider(parent_node,startday,endday,pos_x,pos_y,width,obj){
+    var handle;
+    var x = d3.scaleLinear()
+        .domain([startday, endday])
+        .range([0, slider_width])
+        .clamp(true);
+
+    var container_name=obj.attr("container");
+
+    var slider = parent_node.append("g")
+        .attr("class", "slider")
+        .attr("transform", "translate(" + pos_x + "," + pos_y + ")");
+
+    slider.append("line")
+        .attr("class", "track")
+        .attr("x1", x.range()[0])
+        .attr("x2", x.range()[1])
+        .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-inset")
+        .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+        .attr("class", "track-overlay")
+        .call(d3.drag()
+            .on("start.interrupt", function() { slider.interrupt(); })
+            .on("start drag", function() { handle_slider(x.invert(d3.event.x),handle,x,obj); }));
+
+    slider.insert("g", ".track-overlay")
+        .attr("class", "ticks")
+        .attr("transform", "translate(0," + 18 + ")")
+        .selectAll("text")
+        .data(x.ticks(endday-startday+1))
+        .enter()
+        .append("text")
+        .attr("x", x)
+        .attr("y", 10)
+        .attr("text-anchor", "middle")
+        .text(function(d) { return d; });
+
+    /*var label = slider.append("text")
+        .attr("class", "label")
+        .attr("text-anchor", "middle")
+        .text(formatDate(startDate))
+        .attr("transform", "translate(0," + (-25) + ")")*/
+
+    var handle = slider.insert("circle", ".track-overlay")
+        .attr("class", "handle_"+container_name)
+        .attr("r", 9);
+}
 function create_color_scale(begin_clr,end_clr,domain_b,domain_e) {
     return  color = d3.scaleLinear()
         .domain([domain_b,domain_e])
@@ -433,15 +519,16 @@ console.log("polygon");
         .classed("upper_middle_hexagon", true)
          .call(zoomed);
 
+
+    var points=calculate_lowermiddle_polygons();
+
      lower_middle_hexagon = lower_container.append("path")
-        .attr("d", drawPolygon(calculate_lowermiddle_polygons()))
+        .attr("d", drawPolygon(points))
         .attr("stroke", "red")
         .attr("stroke-dasharray","20,5")
         .attr("stroke-width", 3)
         .attr("fill", "rgba(255,0,0,0.4)")
         .classed("lower_middle_hexagon", true);
-
-
 
 
 
@@ -496,19 +583,36 @@ console.log("polygon");
         //.on("mouseout", mouseout)
         .classed("center_hexagon", true);
 
-    var tooltip_logo_ratio = (s_radius*2)/(s_radius*2);
-    var tooltip_logo_width = s_radius*2;
-    var tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio;
-    var tooltip_logo_href = "../assets/twitch_logo.png";
-    var tooltip_logo = left_container.append("image")
+     tooltip_logo_ratio = (s_radius*2)/(s_radius*2);
+     tooltip_logo_width = s_radius*2;
+     tooltip_logo_height = tooltip_logo_width / tooltip_logo_ratio;
+     tooltip_logo_href = "../assets/twitch_logo.png";
+     tooltip_logo = left_container.append("image")
         .attr("class", "central_logo")
         .attr("xlink:href", tooltip_logo_href)
         .attr("width", 80)
         .attr("height", 80)
         .attr("transform", "translate(" +  (l_center_poly_x-tooltip_logo_width/2) + ", " + (l_center_poly_y-tooltip_logo_height/2) + ")");
 
+    add_date_slider(lower_container,1,7,(points[1].x)-slider_width/2,points[1].y+slider_width*2,slider_width,l_small_center_hexagon);
+    add_date_slider(lower_container,1,7,(points[2].x)-slider_width/2,points[2].y+slider_width*2,slider_width,r_small_center_hexagon);
 
-//TODO USE THIS DATE FORMAT!!!
+    lower_container.append("text")
+        .classed("twitch_date_text",true)
+        .attr("x", (points[1].x)-slider_width/4)
+        .attr("y", points[1].y+slider_width*2-30)
+        .attr("text-anchor", "left")
+        .text("twitch");
+
+
+    lower_container.append("text")
+        .classed("steam_date_text",true)
+        .attr("x", (points[2].x)-slider_width/4)
+        .attr("y", points[2].y+slider_width*2-30)
+        .attr("text-anchor", "left")
+        .text("steam");
+
+    //TODO USE THIS DATE FORMAT!!!
     var date={"day":1,"month":12,"year":2017};
     var game_list=getranklist(element_count+1,r_container_name,date);
     var color_scale_steam=create_color_scale("royalblue", "lightblue",1,element_count);
@@ -1121,10 +1225,21 @@ function zoom() {
 
 
     console.log(direction);
+    console.log(parent_obj);
 
-     if(!InTransition) {
+
+    if(!InTransition) {
          (direction=="down")?parent_obj.attr("segment_number",--segment_number):parent_obj.attr("segment_number",++segment_number);
-        zoom_event_garbage_collector();
+
+
+
+         var container_name=parent_obj.selectAll(".center_hexagon").attr("container");
+         var new_segment_number=parseInt(parent_obj.attr("segment_number"));
+
+         update_slider_date_text(new_segment_number,12,2017,container_name);
+        update_slider_position(new_segment_number,1,7,container_name);
+
+         zoom_event_garbage_collector();
         handle_scroll_event_updated(parent_obj, -1);
     }
 }
