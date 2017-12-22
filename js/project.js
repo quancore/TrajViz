@@ -418,8 +418,8 @@ function get_domain_range(arr) {// return domain (lower,upper) and range (lower,
             {"lower_b":h,"upper_b":0}];//y range
 }
 
-function initialize_scalers(arr_index) {//initialize scalers(x,y) by given index={1,2,3}
-        var domain_range=get_domain_range(select_data_array(arr_index));
+function initialize_scalers(data,arr_index) {//initialize scalers(x,y) by given index={1,2,3}
+        var domain_range=get_domain_range(data);
 
     var x_s = d3.scaleLinear().domain([domain_range[0].lower_b, domain_range[0].upper_b]).range([domain_range[1].lower_b, domain_range[1].upper_b]);
         // Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
@@ -843,10 +843,28 @@ function handle_graph(element_index)
 
     var x = d3.scaleLinear().domain([x_domain.lower_b, x_domain.upper_b]).range([x_range.lower_b, x_range.upper_b]);
     // Y scale will fit values from 0-10 within pixels h-0 (Note the inverted domain for the y-scale: bigger is up!)
+
     var y = d3.scaleLinear().domain([y_domain.lower_b, y_domain.upper_b]).range([y_range.lower_b, y_range.upper_b]);*/
 
+    var obj=d3.selectAll('path[index="' + (element_index) + '"]');
+    var ranking=obj.attr("ranking_index");
+    var platform=obj.attr("container");
+
+    var parent_node=d3.select(obj.node().parentNode);
+    var g_parent_node=d3.select(parent_node.node().parentNode);
+    var seg_num=g_parent_node.attr("segment_number");
+    var data=getGameDataByRank(seg_num,12,2017,ranking,platform);
+
+
+    var hours=[];
+    var data_v=[];
+
+    for (var i=0;i<24;i++){
+        hours.push(i+"H");
+        data_v.push(data[i+'H'])
+    }
     //TODO do not forget to set data element related to line_id (1=data1,2=data2, 3=data3) before getting scalers (x,y)
-    var scalers=initialize_scalers(line_id);
+    var scalers=initialize_scalers(data_v,line_id);
     var x=scalers[0],y=scalers[1];
 
 
@@ -874,9 +892,29 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
     var focus=graph_area.select(".focus");
     var rigth_upper_subcontainer=d3.select("."+ur_big_subcontainer_name);
     var rect=rigth_upper_subcontainer.select(".text_area");
+    var obj=d3.selectAll('path[index="' + (element_index) + '"]');
+    var ranking=obj.attr("ranking_index");
+    var platform=obj.attr("container");
+
+    var parent_node=d3.select(obj.node().parentNode);
+    var g_parent_node=d3.select(parent_node.node().parentNode);
+    var seg_num=g_parent_node.attr("segment_number");
+    var data=getGameDataByRank(seg_num,12,2017,ranking,platform);
+
+
+    var hours=[];
+    var data_v=[];
+
+    for (var i=0;i<24;i++){
+        hours.push(i+"H");
+        data_v.push(data[i+'H'])
+    }
 
     if(!has_x_axis_exist) {
-        var xAxis = d3.axisBottom().scale(x_scalar).tickSize(-h);
+        var xAxis = d3.axisBottom()
+            .scale(x_scalar)
+            .tickSize(-h)
+            .tickFormat(function(d) { return hours[d]; });
 
 
         // Add the x-axis.
@@ -978,7 +1016,7 @@ function draw_graph(graph,line_count,line_id, data, x_scalar,y_scalar,line_creat
     // add lines
     // do this AFTER the axes above so that the line is above the tick-lines
     graph_area.append("path")
-        .attr("d", line_creator(select_data_array(line_id)))
+        .attr("d", line_creator(data_v))
         .attr("id","graph_line")
         .attr("class", "data"+line_id)
         .attr("element_index",element_index);
