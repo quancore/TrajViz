@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <title>TrajViz</title>
+
+    <script src="static/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="static/bower_components/seiyria-bootstrap-slider/dist/bootstrap-slider.min.js"></script>
+
+    <script src="static/bower_components/plotly-latest.min.js"></script>
+
+    <script src="static/node_modules/d3/dist/d3.min.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
+
+
+    <script type="text/javascript" src="static/bower_components/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+    <script src="static/js/plot.js"></script>
+    <script>
+    function resize_plot(){
+      $.getScript("static/js/plot_responsive.js");
+    }
+
+    $(window).resize(resize_plot);
+    $(document).ready(resize_plot);
+    </script>
+
+
+
+    <style>
+        @import url("static/css/config.css");
+        @import url("static/bower_components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.min.css");
+        @import url("static/css/styles.css");
+
+    </style>
+
+    <!--<link href="static/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">-->
+
+    {{ JSGlue.include() }}
+
+
+</head>
+<body>
+    <div class="container-fluid vh-95">
+      <div class="row vh-95">
+        <div class="col-9">
+          <div class="container-fluid cliente vh-95">
+            <div class="row container-fluid-plot cliente vh-50">
+            <div id="plot" class="responsive-plot"></div>
+          </div>
+          <div class="row container-fluid-plot cliente vh-42">
+            <div id="plot2" class="responsive-plot"></div>
+        </div>
+        </div>
+        </div>
+        <div class="col-3">
+          <div class="container-fluid cliente vh-95">
+            <div id="slider_container" class="container-fluid cliente">
+              <div class="row justify-content-right">
+                <button type="button" class="btn btn-sm btn-secondary" data-toggle="popover" data-trigger="focus" data-placement="auto" title="Help" data-content="The percentage of data that will be processed can be adjusted in this container."><i class="fas fa-plus"></i></button>
+            </div>
+              <div class="row justify-content-center">
+              <p class="h4">Data percentage(%)</p>
+            </div>
+            <div class="row justify-content-center">
+              <input id="dataslider" type="text"/>
+            </div>
+            </div>
+            <div id="algorithm_container" class="container-fluid cliente">
+              <div class="row justify-content-right">
+                <button type="button" class="btn btn-sm btn-secondary" data-toggle="popover" data-trigger="focus" data-placement="auto" title="Help" data-content="Algorithm parameters can be adjusted in this container."><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="row justify-content-center">
+            <p class="h4">Advanced parameters</p>
+            </div>
+            <div class="row justify-content-left with-margin">
+              <button type="button" class="btn btn-xs btn-secondary" data-toggle="popover" data-trigger="focus" data-placement="auto" title="Help" data-content="Minimum number of neigbour points that a point (core point) not counted as a noise ."><i class="fas fa-plus"></i></button>
+
+            <p class="h6 ml-1">Minpts</p>
+            </div>
+            <div class="row justify-content-center with-margin">
+            <input id="minpts" type="text"/>
+            </div>
+            <div class="row justify-content-left with-margin">
+              <button type="button" class="btn btn-xs btn-secondary" data-toggle="popover" data-trigger="focus" data-placement="auto" title="Help" data-content="Minimum required spatial threshold to a point counted as a neigbour of another point.."><i class="fas fa-plus"></i></button>
+
+            <p class="h6 ml-1">Spatial threshold</p>
+
+            </div>
+            <div class="row justify-content-center with-margin">
+            <input id="spatialth" type="text"/>
+            </div>
+            <div class="row justify-content-left with-margin">
+               <button type="button" class="btn btn-xs btn-secondary" data-toggle="popover" data-trigger="focus" data-placement="auto" title="Help" data-content="Minimum required temporal threshold to a point counted as a neigbour of another point."><i class="fas fa-plus"></i></button>
+            <p class="h6 ml-1">Temporal threshold</p>
+
+            </div>
+            <div class="row justify-content-center with-margin">
+            <input id="temporalth" type="text"/>
+          </div>
+          <div class="row justify-content-center">
+<a href="#" id='alg_submit_btn' class="btn btn-primary btn-success" onclick="submit_alg()"><i class="fas fa-check-circle"></i> Submit</a>
+          </div>
+          </div>
+          </div>
+        </div>
+        <script>
+        $(document).ready(function() {
+        var myPlot = document.getElementById('plot');
+        graph_init(("{{ json_data }}"), myPlot);
+        $('[data-toggle="popover"]').popover()
+        });
+
+        </script>
+      </div>
+    </div>
+
+</body>
+</html>
