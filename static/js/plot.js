@@ -460,7 +460,7 @@ function insert_algorithm_slider(minpts, maxpts, min_spatial, max_spatial, min_t
 	whole_slider_arr.push(slider4)
 	alg_slider_arr.push(slider4)
 }
-
+//send change
 function changed(newValue) {
 	send_percentage(newValue)
 }
