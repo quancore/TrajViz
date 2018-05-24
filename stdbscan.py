@@ -5,7 +5,7 @@ import numpy as np
 
 
 
-def st_dbscan(df, col_names, spatial_threshold, temporal_threshold, min_neighbors):
+def st_dbscan(df, col_names, spatial_threshold, temporal_threshold, velocity_threshold, min_neighbors):
     """
     Python st-dbscan implementation.
     INPUTS:
@@ -30,7 +30,7 @@ def st_dbscan(df, col_names, spatial_threshold, temporal_threshold, min_neighbor
     for index, point in df.iterrows():
         if df.loc[index]['cluster'] == unmarked:
             neighborhood = retrieve_neighbors(col_names, index, df, spatial_threshold,
-                                              temporal_threshold)
+                                              temporal_threshold, velocity_threshold)
 
             if len(neighborhood) < min_neighbors:
                 df.set_value(index, 'cluster', noise)
@@ -49,7 +49,7 @@ def st_dbscan(df, col_names, spatial_threshold, temporal_threshold, min_neighbor
                     current_point_index = stack.pop()
                     new_neighborhood = retrieve_neighbors(col_names,
                         current_point_index, df, spatial_threshold,
-                        temporal_threshold)
+                        temporal_threshold, velocity_threshold)
 
                     # current_point is a new core
                     if len(new_neighborhood) >= min_neighbors:
@@ -65,15 +65,21 @@ def st_dbscan(df, col_names, spatial_threshold, temporal_threshold, min_neighbor
     return df
 
 
-def retrieve_neighbors(col_names, index_center, df, spatial_threshold, temporal_threshold):
+def retrieve_neighbors(col_names, index_center, df, spatial_threshold, temporal_threshold, velocity_threshold):
     neigborhood = []
 
     center_point = df.loc[index_center]
+
 
     # filter by time
     min_time = max(0, (center_point[col_names[0]] - temporal_threshold))
     max_time = center_point[col_names[0]] + temporal_threshold
     df = df[(df[col_names[0]] >= min_time) & (df[col_names[0]] <= max_time)]
+
+    # filter by velocity
+    min_vel = max(0, (center_point[col_names[3]] - velocity_threshold))
+    max_vel = center_point[col_names[3]] + velocity_threshold
+    df = df[(df[col_names[3]] >= min_vel) & (df[col_names[3]] <= max_vel)]
 
     # filter by distance
     for index, point in df.iterrows():

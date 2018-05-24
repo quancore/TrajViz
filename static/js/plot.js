@@ -64,19 +64,25 @@ var sub_layout = {
 
 
 
-var colors = ["#db4444", "#6e5252", "#dbb7a4", "#6e6e22", "#44dba9", "#52656e", "#54226e", "#6e2222", "#000000", "#dba944", "#a9db44", "#a4dbc9", "#4476db", "#db44db", "#dba4a4", "#db7644", "#6e6552", "#226e22", "#44a9db", "#4444db", "#dba4db"]
-var num_of_color = 20;
-var marker_arr = ["circle", "circle-open", "square", "square-open", "diamond", "diamond-open", "cross", "x" ];
+var base_colors = ["#000000", "#4F4F4F", "#8B6969", "#8B3A3A", "#8B1A1A", "#330000", "#FF0000", "#EE4000", "#5E2605", "#FF6600", "#FFE600", "#7B7922", "#CCCC00", "#C8F526", "#66CD00", "#7BCC70", "#00FA9A", "#37FDFC", "#50A6C2", "#0D4F8B", "#5959AB", '#00009C', '#2E0854', '#EE00EE', '#D0A9AA']
+var colors;
+//var colors = ["#db4444", "#6e5252", "#dbb7a4", "#6e6e22", "#44dba9", "#52656e", "#54226e", "#6e2222", "#000000", "#dba944", "#a9db44", "#a4dbc9", "#4476db", "#db44db", "#dba4a4", "#db7644", "#6e6552", "#226e22", "#44a9db", "#4444db", "#dba4db"]
+var num_of_color = base_colors.length;
+var marker_arr = ["circle", "square", "diamond", "cross", "x" ];
 
 var plot = "plot";
 var subplot = "plot2";
+
+const index_selector = (arr, index)=>index.map(i => arr[i])
+const arrayColumn = (arr, n) => arr.map(x => x[n]);
+
 
 var whole_slider_arr = [];
 var alg_slider_arr = [];
 var step_number = 10000;
 var step_number_temporal = 100000;
 var precision = 3;
-var range_multiplier = 0.05;
+var range_multiplier = 0.02;
 var data_percentage = 100;
 var slider_initilized = false;
 var packed_values;
@@ -87,7 +93,6 @@ var trace_dict = {};
 var handlers_binded = false;
 
 $( document ).ajaxStart(function() {
-	//slider = document.getElementById('dataslider').node();
 	for(var i = 0; i<whole_slider_arr.length;i++){
 		whole_slider_arr[i].disable();
 	}
@@ -105,32 +110,50 @@ $( document ).ajaxStop(function() {
 });
 
 
-	function hover_datapoint(data){
-		//console.log("hovered")
-				var infotext = data.points.map(function(d){
-					return (d.data.name+': x= '+d.x+', y= '+d.y.toPrecision(3));
-				});
-				//console.log(infotext);
+// function hover_datapoint(data){
+// 	//console.log("hovered")
+// 			var infotext = data.points.map(function(d){
+// 				return (d.data.name+': x= '+d.x+', y= '+d.y.toPrecision(3));
+// 			});
+// 			//console.log(infotext);
+// }
+function pick_color(num_cluster){
+	color_arr = []
+	step_size = Math.floor(num_of_color/num_cluster)
+	step_size = Math.max(1, step_size)
+	console.log("color select")
+	console.log(step_size);
+	console.log(num_cluster);
+	for(i=0;i<num_cluster;i++){
+		console.log("ggg");
+		selected_c = base_colors[(i*step_size)%num_of_color]
+		color_arr.push(selected_c)
 	}
+	color_arr = shuffle(color_arr)
+	console.log(color_arr);
+	return color_arr
+}
+
 function click_datapoint(data){
 	console.log("***********************");
 	console.log("clicking is called");
-	console.log(data);
+	//console.log(data);
 	var cluster_num = data.points[0].curveNumber;
 	var x = packed_values[cluster_num].x;
 	var y = packed_values[cluster_num].y;
 	var frame_num = packed_values[cluster_num].frame_num;
+	var velocity = packed_values[cluster_num].velocity
 
 
 	var name = "cluster "+cluster_num;
 
-	var color = colors[cluster_num%num_of_color];
+	var color = colors[cluster_num];
 	var traj_nums = packed_values[cluster_num].traj_num;
-	console.log(traj_nums);
+	//console.log(traj_nums);
 
-	var markers_shuffled = shuffle(marker_arr);
-	var starting_marker = markers_shuffled[0];
-	var other_marker = markers_shuffled[1];
+	// var markers_shuffled = shuffle(marker_arr);
+	// var starting_marker = markers_shuffled[0];
+	// var other_marker = markers_shuffled[1];
 
 
 
@@ -147,13 +170,16 @@ function click_datapoint(data){
 		var x_selected = index_selector(x, point_index);
 		var y_selected = index_selector(y, point_index);
 		var frame_selected = index_selector(frame_num, point_index);
-
+		var velocty_selected = index_selector(velocity, point_index);
+		//console.log(velocty_selected);
 
 		var show_legend = i === 0 ? true : false ;
-		var markers = build_traj_markers(starting_marker, other_marker, x.length);
-		var marker_size = build_traj_markers(20, 12, x.length);
-		var hover_text =  create_frame_hovertext(("trajectory number: " + traj_num), "frame number: ", frame_selected);
+		var marker = data.points[0]["marker.symbol"]
+		var markers = build_traj_markers(marker, marker, x.length);
+		var marker_size = build_traj_markers(22, 12, x.length);
+		var hover_text =  create_frame_hovertext(("Trajectory number: " + traj_num), "Frame number: ", ("Av. velocity: " + velocty_selected[0]),frame_selected);
 		var trace;
+
 		if(data.points[0].data.name === "noise"){
 			console.log("noise");
 			name = "noise"
@@ -164,7 +190,7 @@ function click_datapoint(data){
 			mode: 'markers',
 			legendgroup: cluster_num,
 			marker: {
-				//symbol : markers,
+				symbol : markers,
 				size: 12,
 				color:color,
 				opacity: 1,
@@ -233,31 +259,9 @@ function click_datapoint(data){
 			// });
 }
 
-function shuffle(array) {
-  var currentIndex = array.length, temporaryValue, randomIndex;
-
-  // While there remain elements to shuffle...
-  while (0 !== currentIndex) {
-
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex -= 1;
-
-    // And swap it with the current element.
-    temporaryValue = array[currentIndex];
-    array[currentIndex] = array[randomIndex];
-    array[randomIndex] = temporaryValue;
-  }
-
-  return array;
-}
-
-
 function delete_traj_from_graph(div, cluster_dict, key_ , element_number, adding_order_cluster){
 	cluster_dict = reorder_dict(cluster_dict, adding_order_cluster, element_number)
 	var starting_index = cluster_dict[key_][0], curr_element_order = cluster_dict[key_][1];
-	console.log("starting: ", starting_index, "elements: ", element_number);
-
 	var deleted_items = [];
 	for(var i = starting_index; i<starting_index+element_number; i++){
 		console.log(i);
@@ -286,14 +290,13 @@ function reorder_dict(cluster_dict, adding_order_cluster, element_number){
 
 	return cluster_dict;
 }
+
 function purge_subplot(){
 	var plt_div = document.getElementById(subplot);
 	Plotly.purge(plt_div);
 	drawed_traj_num = 0, adding_order = 0;
 	trace_dict = {};
 }
-
-
 
 function build_traj_markers(starting_marker, other_marker, element_number){
 	var marker = [];
@@ -312,18 +315,18 @@ function hook_event_listener(plot){
 
 function submit_alg(){
 	if(alg_slider_arr[0].isEnabled()){
+
 		var pts = alg_slider_arr[0].getValue();
 		var spatial = alg_slider_arr[1].getValue();
 		var temporal = alg_slider_arr[2].getValue();
-		send_alg_param(pts, spatial, temporal*1000);
+		var velocity = alg_slider_arr[3].getValue();
+
+		send_alg_param(pts, spatial, temporal*1000, velocity);
 	}
 	else{
 		console.log("No submit");
 	}
 }
-
-
-const index_selector = (arr, index)=>index.map(i => arr[i])
 
 function insert_data_slider(){
 	var slider = new Slider("#dataslider", {
@@ -341,32 +344,43 @@ function insert_data_slider(){
 function handle_alg_sliders(values){
 	var params = create_alg_parameters(values);
 	if (!slider_initilized){
-		insert_algorithm_slider(params.min_pts, params.max_pts, params.spatial_min , params.spatial_max, params.temporal_min, params.temporal_max, values.alg_param);
+		insert_algorithm_slider(params.min_pts, params.max_pts, params.spatial_min , params.spatial_max, params.temporal_min, params.temporal_max, params.velocity_min, params.velocity_max, values.alg_param);
 		slider_initilized = true
 	}
 	else{
 		update_algorithm_slider(alg_slider_arr[0], params.min_pts, params.max_pts, values.alg_param.pts);
 		update_algorithm_slider(alg_slider_arr[1], params.spatial_min, params.spatial_max, values.alg_param.spatial);
 		update_algorithm_slider(alg_slider_arr[2], params.temporal_min, params.temporal_max, values.alg_param.temporal, 'temporal');
+		update_algorithm_slider(alg_slider_arr[3], params.velocity_min, params.velocity_max, values.alg_param.velocity);
+
 	}
 }
 
 function create_alg_parameters(values){
 	var row_ids = values.row_ids
-	,frame_num = values.frame_num, x = values.x, y = values.y;
+	,frame_num = values.frame_num, x = values.x, y = values.y, velocity = values.velocity;
+	console.log("***********");
+	console.log(values.alg_param.velocity);
+
 	var spatial_max = Math.max(Math.max.apply(Math, x),Math.max.apply(Math, y), values.alg_param.spatial);
 	//var spatial_min = Math.max(Math.min.apply(Math, x),Math.min.apply(Math, y));
 	var spatial_min = 0;
 
 	var temporal_max = (0.4*Math.max.apply(Math, frame_num))*range_multiplier;
 	var temporal_min = (0.4*Math.min.apply(Math, frame_num));
+
+	var velocity_max = Math.max(Math.max.apply(Math, velocity), values.alg_param.velocity)*range_multiplier*100;
+	var velocity_min = Math.min(Math.min.apply(Math, velocity), values.alg_param.velocity);
+
 	var min_pts = 0;
 	var max_pts = row_ids.length*range_multiplier;
-	return{
+	return {
 		spatial_max:spatial_max,
 		spatial_min:spatial_min,
 		temporal_max:temporal_max,
 		temporal_min:temporal_min,
+		velocity_max:velocity_max,
+		velocity_min:velocity_min,
 		min_pts:min_pts,
 		max_pts:max_pts
 	}
@@ -392,10 +406,12 @@ function update_algorithm_slider(slider, min_val, max_val, curr_val, type = 'no_
 
 }
 
-function insert_algorithm_slider(minpts, maxpts, min_spatial, max_spatial, min_temporal, max_temporal, curr_vals){
+function insert_algorithm_slider(minpts, maxpts, min_spatial, max_spatial, min_temporal, max_temporal, min_velocity, max_velocity, curr_vals){
 	var pts_step = ((maxpts - minpts)/step_number).toPrecision(precision);
 	var spatial_step = ((max_spatial - min_spatial)/step_number).toPrecision(precision);
 	var temporal_step = ((max_temporal - min_temporal)/step_number_temporal).toPrecision(precision);
+	var velocity_step = ((max_velocity - min_velocity)/step_number).toPrecision(precision);
+
 
 	var slider = new Slider("#minpts", {
  		 //ticks: [0, 25, 50, 75, 100],
@@ -417,25 +433,35 @@ function insert_algorithm_slider(minpts, maxpts, min_spatial, max_spatial, min_t
 		//ticks_snap_bounds: 5,
 		value:curr_vals.spatial,
 		step:spatial_step
-});
-whole_slider_arr.push(slider2)
-alg_slider_arr.push(slider2)
+	});
+	whole_slider_arr.push(slider2)
+	alg_slider_arr.push(slider2)
 
 
-var slider3 = new Slider("#temporalth", {
-	max:max_temporal,
-	min:min_temporal,
-	//ticks_labels: ['0', '25', '50', '75', '100'],
-	//ticks_snap_bounds: 5,
-	value:curr_vals.temporal,
-	step:temporal_step
-});
-whole_slider_arr.push(slider3)
-alg_slider_arr.push(slider3)
+	var slider3 = new Slider("#temporalth", {
+		max:max_temporal,
+		min:min_temporal,
+		//ticks_labels: ['0', '25', '50', '75', '100'],
+		//ticks_snap_bounds: 5,
+		value:curr_vals.temporal,
+		step:temporal_step
+	});
+	whole_slider_arr.push(slider3)
+	alg_slider_arr.push(slider3)
+
+	var slider4 = new Slider("#velocityth", {
+		max:max_velocity,
+		min:min_velocity,
+		//ticks_labels: ['0', '25', '50', '75', '100'],
+		//ticks_snap_bounds: 5,
+		value:curr_vals.velocity,
+		step:velocity_step
+	});
+	whole_slider_arr.push(slider4)
+	alg_slider_arr.push(slider4)
 }
 
 function changed(newValue) {
-	console.log(newValue);
 	send_percentage(newValue)
 }
 
@@ -446,7 +472,6 @@ function send_percentage(percent) {
         }, function(data) {
             var response = JSON.stringify(data);
 						var myPlot = document.getElementById(plot);
-						console.log(response);
 						data_percentage = percent;
 						purge_subplot();
 						graph_init(response, myPlot)
@@ -454,12 +479,13 @@ function send_percentage(percent) {
 }
 
 
-function send_alg_param(pts,spatial,temporal) {
+function send_alg_param(pts,spatial,temporal, velocity) {
 	console.log("called");
         $.getJSON(Flask.url_for("run_dbcsan"), {
         pts:pts,
 				spatial:spatial,
 				temporal:temporal,
+				velocity:velocity,
 				percent:data_percentage
         }, function(data) {
             var response = JSON.stringify(data);
@@ -480,16 +506,15 @@ draw_graph(packed_values, div);
 }
 
 function handle_json_data(json){
-  //coloumns = ['Row_ID', 'frame_num', 'ped_id', 'x', 'y', 'cluster']
-  const arrayColumn = (arr, n) => arr.map(x => x[n]);
+  //coloumns = ['Row_ID', 'frame_num', 'ped_id', 'x', 'y', 'cluster', 'Traj_num', 'velocity']
   var results = JSON.parse(json);
 	var alg_param = results[0];
-	console.log("algs param");
-	console.log(alg_param);
+	//console.log("algs param");
+	//console.log(alg_param);
 
 	results = results.slice(1, results.length);
-	console.log("remaining array");
-	console.log(results);
+	//console.log("remaining array");
+	//console.log(results);
   var row_ids = arrayColumn(results, 0);
   var frame_num = arrayColumn(results, 1);
   var ped_id = arrayColumn(results, 2);
@@ -497,17 +522,18 @@ function handle_json_data(json){
   var y = arrayColumn(results, 4);
   var cluster = arrayColumn(results, 5);
 	var traj_num = arrayColumn(results, 6);
-
+	var velocity = arrayColumn(results, 7);
 
   return{
-		alg_param:{pts:alg_param[0],spatial:alg_param[1],temporal:(alg_param[2]/1000)},
+		alg_param:{pts:alg_param[0],spatial:alg_param[1],temporal:(alg_param[2]/1000), velocity:(alg_param[3])},
     row_ids:row_ids,
     frame_num:frame_num,
     ped_id:ped_id,
     x:x,
     y:y,
     cluster:cluster,
-		traj_num:traj_num
+		traj_num:traj_num,
+		velocity:velocity
   }
 }
 
@@ -517,8 +543,9 @@ function pack_values(values){
 	var packed_values = [];
 	var cluster_arr = values.cluster, row_ids = values.row_ids
 	,frame_num = values.frame_num, x = values.x, y = values.y, ped_id = values.ped_id
-	,traj_num = values.traj_num;
+	,traj_num = values.traj_num ,velocity = values.velocity;
 	var unique_clusters = Array.from(new Set(cluster_arr));
+	colors = pick_color(unique_clusters.length)
 	for (var i = 0; i < unique_clusters.length; i++) {
 	  var cluster_index = find_occurences(cluster_arr, unique_clusters[i]);
 	  packed_values.push({
@@ -528,7 +555,8 @@ function pack_values(values){
 	    ped_id : index_selector(ped_id, cluster_index),
 	    x : index_selector(x, cluster_index),
 	    y : index_selector(y, cluster_index),
-			traj_num : index_selector(traj_num, cluster_index)
+			traj_num : index_selector(traj_num, cluster_index),
+			velocity:index_selector(velocity, cluster_index)
 	  });
 	}
 	return packed_values;
@@ -538,11 +566,18 @@ function pack_values(values){
 function draw_graph(values, div){
 	packed_values = values;
   var data = [];
+
   for (var i = 0; i < values.length; i++) {
     var cluster = values[i].cluster;
 		var cluster_name = "cluster "+i
-		var text = create_hovertext(values[i].x, values[i].y, values[i].frame_num);
-		var color = colors[i%num_of_color];
+		var text = create_hovertext(values[i].x, values[i].y, values[i].frame_num, values[i].velocity);
+		var color = colors[i];
+		var markers_shuffled = shuffle(marker_arr);
+	 	var starting_marker = markers_shuffled[0];
+	 	var other_marker = starting_marker;
+		var markers = build_traj_markers(starting_marker, other_marker, values[i].x.length);
+
+
 
 		if(cluster == -1)
 			cluster_name = "noise"
@@ -554,9 +589,7 @@ function draw_graph(values, div){
 			name: cluster_name,
     	marker: {
     		size: 8,
-    		line: {
-    		//color: 'rgba(217, 217, 217, 0.14)',
-    		width: 0.5},
+				symbol : markers,
 				color:color,
     		opacity: 0.9,
 			},
@@ -574,20 +607,20 @@ function draw_graph(values, div){
 		handlers_binded = true;
 	}
 }
-function create_hovertext(x, y, frame_num){
-	var x_base = "x: ", y_base = "y: ", z_base = "frame number: ";
+function create_hovertext(x, y, frame_num, velocity){
+	var x_base = "x: ", y_base = "y: ", z_base = "Frame number: ", vel_base = "Avg. velocity: ";
 	var hovertext = []
 	for (var i = 0; i<x.length; i++){
-		var text = x_base+x[i]+"<br>"+y_base+y[i]+"<br>"+z_base+frame_num[i];
+		var text = x_base+x[i]+"<br>"+y_base+y[i]+"<br>"+z_base+frame_num[i]+"<br>"+vel_base+velocity[i];
 		hovertext.push(text);
 	}
 	return hovertext;
 }
 
-function create_frame_hovertext(traj_text, text_base, frame_num){
+function create_frame_hovertext(traj_text, text_base, text_velocity, frame_num){
 	var hovertext = []
 	for (var i = 0; i<frame_num.length; i++){
-		var text = traj_text+"<br>"+text_base+frame_num[i];
+		var text = traj_text+"<br>"+text_base+frame_num[i]+"<br>"+text_velocity;
 		hovertext.push(text);
 	}
 	return hovertext;
@@ -602,4 +635,23 @@ function find_occurences(array,element){
       }
     }
   return counts;
+}
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
 }

@@ -17,13 +17,12 @@ jsglue.init_app(app)
 
 @app.route('/', methods=['GET','POST'])
 def graph_init():
-    print("initialted")
+    interested_dataset = './data/crowds/students003.txt'
     dataloader = Dataloader.getInstance()
-    dataloader.build_dataframes(True)
-    json_data = dataloader.retrieve_df('./data/biwi/biwi_hotel.txt')
-    dataloader.retrieved_dataset = './data/biwi/biwi_hotel.txt'
+    dataloader.build_dataframes(True, 30)
+    json_data = dataloader.retrieve_df(interested_dataset)
+    dataloader.retrieved_dataset = interested_dataset
     json_data = dataloader.append_alg_params(json_data)
-    print(json_data)
     return render_template("index.html",json_data=json_data)
 
 @app.route('/percent', methods=['GET','POST'])
@@ -41,10 +40,11 @@ def run_dbcsan():
     pts = request.args.get('pts', '')
     spatial = request.args.get('spatial', '')
     temporal = request.args.get('temporal', '')
+    velocity = request.args.get('velocity', '')
     percent = request.args.get('percent', '')
-    print("received: ", pts, spatial, temporal, percent)
+    print("received: ", pts, spatial, temporal, velocity,percent)
     dataloader = Dataloader.getInstance()
-    json_data = dataloader.run_dbscan_with_params(float(pts), float(spatial), float(temporal), float(percent));
+    json_data = dataloader.run_dbscan_with_params(float(pts), float(spatial), float(temporal), float(velocity),float(percent));
     json_data = dataloader.append_alg_params(json_data)
     return json_data
 
